@@ -1,0 +1,311 @@
+@CHARSET "UTF-8";
+
+body {
+	font-family: 微软亚黑, 'Microsoft YaHei', \5FAE\8F6F\96C5\9ED1, sans-serif
+}
+
+.hidden {
+	display: none
+}
+
+.clear {
+	clear: both;
+}
+
+.loadmore {
+	margin-top: 16px
+}
+
+a {
+	/*text-decoration: none;*/
+}
+
+div.listtitle {
+	color: #DAA520;
+	background-color: transparent;
+	font-size: 1.6em;
+	padding-bottom: .2em;
+	margin: 1em 0.7375em;
+}
+
+@media ( min-width : 48em ) {
+	div.listtitle {
+		border-bottom: 1px solid #ddd;
+	}
+}
+
+#以下是公共组件的css 
+
+
+
+
+/*list里面有collapsible的*/    
+.ui-li-static.ui-collapsible>.ui-collapsible-heading {
+	margin: 0;
+}
+
+.ui-li-static.ui-collapsible {
+	padding: 0;
+}
+
+.ui-li-static.ui-collapsible>.ui-collapsible-heading>.ui-btn {
+	border-top-width: 0;
+}
+
+.ui-li-static.ui-collapsible>.ui-collapsible-heading.ui-collapsible-heading-collapsed>.ui-btn,.ui-li-static.ui-collapsible>.ui-collapsible-content
+	{
+	border-bottom-width: 0;
+}
+
+/**
+* RWD list开始
+* class是my-listview 内容用h2 和 p表示
+*/
+
+/* A bit custom styling */
+.my-listview .ui-listview li .ui-btn p {
+	color: #c0c0c0;
+}
+
+ .my-listview p.ui-li-aside {
+	right: 1.333em;
+}
+
+/* First breakpoint is 48em (768px). 3 column layout. Tiles 250x250 pixels incl. margin at the breakpoint. */
+@media ( min-width : 48em ) {
+	.my-listview {
+		margin-top: 0
+	}
+
+	.my-listview .ui-listview li .ui-btn .ui-li-aside {
+		color: #eee;
+	}
+	.my-listview .ui-content {
+		padding: .5625em; /* 9px */
+	}
+	.my-listview .ui-listview li {
+		float: left;
+		width: 30.9333%; /* 33.3333% incl. 2 x 1.2% margin */
+		height: 14.5em; /* 232p */
+		margin: .5625em 1.2%;
+	}
+	.my-listview .ui-listview li>.ui-btn {
+		-webkit-box-sizing: border-box;
+		/* include padding and border in height so we can set it to 100% */
+		-moz-box-sizing: border-box;
+		-ms-box-sizing: border-box;
+		box-sizing: border-box;
+		height: 100%;
+	}
+	.my-listview .ui-listview li.ui-li-has-thumb .ui-li-thumb {
+		height: auto; /* To keep aspect ratio. */
+		max-width: 100%;
+		max-height: none;
+	}
+	/* Make all list items and anchors inherit the border-radius from the UL. */
+	.my-listview .ui-listview li,.my-listview .ui-listview li .ui-btn,.my-listview .ui-listview .ui-li-thumb
+		{
+		-webkit-border-radius: 5px;
+		border-radius: 5px;
+	}
+	/* Hide the icon */
+	.my-listview .ui-listview .ui-btn-icon-right:after {
+		display: none;
+	}
+	/* Make text wrap. */
+	.my-listview .ui-listview h2,.my-listview .ui-listview p {
+		white-space: normal;
+		overflow: visible;
+		position: absolute;
+		left: 0;
+		right: 0;
+		color: #fff;
+		text-shadow: rgb(17, 17, 17) 0px 1px 0px;
+	}
+	/* Text position */
+	.my-listview .ui-listview h2 {
+		font-size: 1.25em;
+		margin: 0;
+		padding: .125em 1em;
+		bottom: 50%;
+	}
+	.my-listview .ui-listview p {
+		font-size: 1em;
+		margin: 0;
+		padding: 0 1.25em;
+		min-height: 50%;
+		bottom: 0;
+	}
+	/* Semi transparent background and different position if there is a thumb. The button has overflow hidden so we don't need to set border-radius. */
+	.my-listview .ui-listview .ui-li-has-thumb h2,.my-listview .ui-listview .ui-li-has-thumb p
+		{
+		background: #111;
+		background: rgba(0, 0, 0, .8);
+	}
+	.my-listview .ui-listview .ui-li-has-thumb h2 {
+		bottom: 35%;
+	}
+	.my-listview .ui-listview .ui-li-has-thumb p {
+		min-height: 35%;
+	}
+	/* ui-li-aside has class .ui-li-desc as well so we have to override some things. */
+	.my-listview .ui-listview p.ui-li-aside {
+		padding: .125em .625em;
+		width: auto;
+		min-height: 0;
+		top: 0;
+		left: auto;
+		bottom: auto;
+		/* Custom styling. */
+		background: #990099;
+		background: rgba(153, 0, 153, .85);
+		-webkit-border-top-right-radius: 5px;
+		border-top-right-radius: 5px;
+		-webkit-border-bottom-left-radius: 5px;
+		border-bottom-left-radius: 5px;
+		-webkit-border-bottom-right-radius: 0;
+		border-bottom-right-radius: 0;
+	}
+	/* If you want to add shadow, don't kill the focus style. */
+	.my-listview .ui-listview li {
+		-moz-box-shadow: 0px 0px 9px #111;
+		-webkit-box-shadow: 0px 0px 9px #111;
+		box-shadow: 0px 0px 9px #111;
+	}
+	/* Images mask the hover bg color so we give desktop users feedback by applying the focus style on hover as well. */
+	.my-listview .ui-listview li>.ui-btn:hover {
+		-moz-box-shadow: 0px 0px 12px #33ccff;
+		-webkit-box-shadow: 0px 0px 12px #33ccff;
+		box-shadow: 0px 0px 12px #33ccff;
+	}
+	/* Animate focus and hover style, and resizing. */
+	.my-listview .ui-listview li,.my-listview .ui-listview .ui-btn {
+		-webkit-transition: all 500ms ease;
+		-moz-transition: all 500ms ease;
+		-o-transition: all 500ms ease;
+		-ms-transition: all 500ms ease;
+		transition: all 500ms ease;
+	}
+}
+/* Second breakpoint is 63.75em (1020px). 4 column layout. Tiles will be 250x250 pixels incl. margin again at the breakpoint. */
+@media ( min-width : 63.75em ) {
+	.my-listview .ui-content {
+		padding: .625em; /* 10px */
+	}
+	/* Set a max-width for the last breakpoint to prevent too much stretching on large screens.
+    By setting the max-width equal to the breakpoint width minus padding we keep square tiles. */
+	.my-listview .ui-listview {
+		max-width: 62.5em; /* 1000px */
+		margin: 0 auto;
+	}
+	/* Because of the 1000px max-width the width will always be 230px (and margin left/right 10px),
+    but we stick to percentage values for demo purposes. */
+	.my-listview .ui-listview li {
+		width: 23%;
+		height: 230px;
+		margin: .625em 1%;
+	}
+}
+
+/**
+* searchbar 样式 开始
+*/
+.searchbar {
+	padding: .4em 1em
+}
+
+.searchbar .sbl {
+	float: left;
+	width: 78%;
+	margin-right: 2%;
+}
+
+.searchbar .sbr {
+	float: right;
+	width: 20%;
+}
+
+.searchbar .ui-btn {
+	padding-top: .35em
+}
+
+#以下是各页面的 /*index样式*/     
+.diqu ul {
+	list-style: none;
+	float: left;
+	margin: 0
+}
+
+.diqu li {
+	display: block;
+	float: left;
+	width: 100px;
+}
+
+.diqu li a {
+	text-decoration: none;
+}
+/*index样式 结束*/
+
+/*store info*/
+/* Basic styles */
+.rwd-example .ui-body {
+	text-align: left;
+	border-color: #ddd;
+}
+
+.rwd-example .ui-body  .name {
+	font-size: 18px;
+	font-weight: 900;
+	color: #CC0033;
+}
+
+.rwd-example .ui-body {
+	text-align: left;
+	border-color: #ddd;
+}
+
+.rwd-example .ui-block-a img {
+	width: 120px;
+	height: 120px;
+}
+
+.rwd-example p {
+	color: #777;
+	line-height: 140%
+}
+/* Stack all blocks to start */
+.rwd-example .ui-block-a,.rwd-example .ui-block-b {
+	width: 100%;
+	float: none;
+}
+/* Collapsing borders */
+.rwd-example>div+div .ui-body {
+	border-top-width: 0;
+}
+
+@media all and (min-width: 75em) {
+	.rwd-example>div:first-child .ui-body {
+		border-bottom-width: 1px;
+	}
+	.rwd-example>div+div .ui-body {
+		border-left-width: 0;
+	}
+	.rwd-example .ui-block-b .ui-body {
+		min-height: 0;
+	}
+	.rwd-example .ui-body {
+		font-size: 125%;
+	}
+	.rwd-example .ui-block-a img {
+		float: right;
+	}
+	.rwd-example .ui-block-a {
+		float: left;
+		width: 24.925%%;
+	}
+	.rwd-example .ui-block-b {
+		float: left;
+		width: 49.95%;;
+	}
+}

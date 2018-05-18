@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"   
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+
+<mapper namespace="com.amistrong.express.dao.SystemSettingDao">
+    
+    <!-- 系统初始化设置参数 -->
+    <select id="systemInit" resultType="com.amistrong.express.beans.SystemSettingBean">
+		SELECT 	 code,
+		       	 codeName,
+		       	 parent,
+		       	 `value`
+		FROM 	 mst_code
+		WHERE	 deleteFlag = 0   	
+    </select>
+    
+    <select id="getUrlValidateSet" resultType="ValidateSetBean">
+		SELECT
+			urlPath,
+			isValidate
+		FROM
+			frm_url_filter
+    </select>
+    
+    <select id="getCompany" resultType="com.amistrong.express.beans.SystemSettingBean">
+     	SELECT 	 companyId as code,
+		       	 companyName as  codeName,
+		       	 parentId as  parent,
+		       	 companyValue as value,
+		       	 firstWeight,
+		       	 firstWeightPrice,
+		       	 additionalWeightPrice
+		FROM 	 frm_express_company
+		WHERE	 deleteFlag = '0' 
+    </select>
+    
+    <select id="getLogisticsCompany" resultType="com.amistrong.express.beans.LogisticsCompanyBean">
+     	SELECT 	 companyId,
+		       	 name,
+		       	 abbreviation,
+		       	 regular
+		FROM 	 frm_logistics_company
+    </select>
+    
+</mapper>  

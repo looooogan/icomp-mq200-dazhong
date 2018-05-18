@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"   
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+
+<mapper namespace="com.amistrong.express.dao.C01S005Dao">
+    
+    <!-- 插入报废表数据 -->
+    <insert id="insertScrap" parameterType="com.amistrong.express.beans.response.Scrap">
+        insert into scrap(
+	        scrapID
+			,toolType
+			,BusinessID
+			,Material
+			,UsageCounter
+			,toolID
+			,scrapCause
+			,scrapNumber
+			,scrapState
+			,CreateUser
+			,UpdateUser
+			,CreateTime
+			,UpdateTime
+			,scrapTime
+			,DelFlag
+        )
+        Values (
+        	#{scrap.scrapID},
+        	0,
+        	#{scrap.businessID},
+        	#{scrap.material},
+        	1,
+        	#{scrap.toolID},
+        	#{scrap.scrapCause},
+        	#{scrap.scrapNumber},
+        	#{scrap.scrapState},
+        	#{scrap.createUser},
+        	#{scrap.createUser},
+        	NOW(),
+        	NOW(),
+        	NOW(),
+        	'0'
+        )
+    </insert>
+    
+	<!--更新流转统计表数据-->
+	<update id="updateTooltransferTotalInfo" parameterType="com.amistrong.express.beans.response.TooltransferTotal">
+		update 
+		 	tooltransferTotal
+		set 
+			UpdateTime = NOW()
+			,UpdateUser = #{tst.updateUser}
+			<if test="tst.spareKnifeSum != null and tst.spareKnifeSum != ''">
+             ,SpareKnifeSum = #{tst.spareKnifeSum}
+         	</if>
+         	<if test="tst.spareKnifeSum == 0">
+             ,SpareKnifeSum = #{tst.spareKnifeSum}
+         	</if>
+			<if test="tst.grindingFactorySnum != null and tst.grindingFactorySnum != ''">
+             ,GrindingFactorySnum = #{tst.grindingFactorySnum}
+         	</if>
+         	<if test="tst.grindingFactorySnum == 0">
+             ,GrindingFactorySnum = #{tst.grindingFactorySnum}
+         	</if>
+         	<if test="tst.externalGrindingSum != null and tst.externalGrindingSum != ''">
+             ,ExternalGrindingSum = #{tst.externalGrindingSum}
+         	</if>
+         	<if test="tst.externalGrindingSum == 0">
+             ,ExternalGrindingSum = #{tst.externalGrindingSum}
+         	</if>
+         	<if test="tst.productionLineSum != null and tst.productionLineSum != ''">
+             ,ProductionLineSum = #{tst.productionLineSum}
+         	</if>
+         	<if test="tst.productionLineSum == 0">
+             ,ProductionLineSum = #{tst.productionLineSum}
+         	</if>
+         	<if test="tst.stayExternalGrindingSum != null and tst.stayExternalGrindingSum != ''">
+             ,StayExternalGrindingSum = #{tst.stayExternalGrindingSum}
+         	</if>
+         	<if test="tst.stayExternalGrindingSum == 0">
+             ,StayExternalGrindingSum = #{tst.stayExternalGrindingSum}
+         	</if>
+    	    <if test="tst.scrapSum != null and tst.scrapSum != ''">
+             ,ScrapSum = #{tst.scrapSum}
+         	</if>
+		where
+			ToolCode = #{tst.toolCode} 
+	</update>
+	
+    <!-- 根据材料号查询流转统计表数据-->
+    <select id="getTooltransferTotalInfoByToolCode" resultType="com.amistrong.express.beans.response.TooltransferTotal">
+			SELECT 
+				SpareKnifeSum spareKnifeSum,
+				GrindingFactorySnum grindingFactorySnum,
+				ExternalGrindingSum externalGrindingSum,
+				ProductionLineSum productionLineSum,
+				StayExternalGrindingSum stayExternalGrindingSum,
+				ScrapSum scrapSum
+			FROM
+				tooltransferTotal
+			WHERE
+				ToolCode = #{toolCode}
+    </select>
+    
+   <!-- 新建换领申请表数据 -->
+    <insert id="insertRedemptionapplied" parameterType="com.amistrong.express.beans.response.Redemptionapplied">
+        insert into redemptionapplied(
+	        RedemptionAppliedID
+			,ToolCode
+			,AppliedNumber
+			,ApplyUser
+			,ApplyTime
+			,DelFlag
+			,CreateUser
+			,UpdateUser
+			,CreateTime
+			,UpdateTime
+			,ProcessingStatus
+			<if test="r.receiveNumber != null and r.receiveNumber != ''">
+             ,ReceiveNumber
+         	</if>
+         	<if test="r.receiveUser != null and r.receiveUser != ''">
+             ,ReceiveUser
+         	</if>
+        )
+        Values (
+        	#{r.redemptionAppliedID},
+        	#{r.toolCode},
+        	#{r.appliedNumber},
+        	#{r.applyUser},
+        	NOW(),
+        	'0',
+        	#{r.applyUser},
+        	#{r.applyUser},
+        	NOW(),
+        	NOW(),
+        	#{r.processingStatus}
+        	<if test="r.receiveNumber != null and r.receiveNumber != ''">
+             ,#{r.receiveNumber}
+         	</if>
+         	<if test="r.receiveUser != null and r.receiveUser != ''">
+             ,#{r.receiveUser}
+         	</if>
+        )
+    </insert>
+    
+    <!-- 根据rfid材料载体信息-->
+    <select id="getRfidInfoByRfid" resultType="com.amistrong.express.beans.response.Rfidcontainer">
+			SELECT 
+				QueryType queryType
+			FROM
+				rfidcontainer
+			WHERE
+				RfidContainerID = #{rfid} and DelFlag = '0'
+    </select>
+    
+    <!-- 根据rfid材料载体信息-->
+    <select id="searchToolInfoBySpcode" resultType="com.amistrong.express.beans.response.Tool">
+			SELECT
+				ToolID toolID,ToolCode toolCode,ToolGrinding toolGrinding
+			FROM
+				tool
+			WHERE
+				ToolCode = (
+					SELECT
+						ToolCode
+					FROM
+						synthesiscutterlocation
+					WHERE
+						SynthesisParametersID = (
+							SELECT
+								SynthesisParametersID
+							FROM
+								synthesisparameters
+							WHERE
+								SynthesisParametersCode = #{spCode} AND DelFlag = '0'
+						) AND DelFlag = '0'
+				) AND DelFlag = '0'
+    </select>
+    
+	<!--删除刀具生命周期表数据-->
+	<update id="updateToolwholelifecycle" parameterType="com.amistrong.express.beans.response.Toolwholelifecycle">
+		update 
+		 	toolwholelifecycle
+		set 
+			DelFlag = '1'
+			,UpdateTime = NOW()
+			,UpdateUser = #{tf.updateUser}
+		where
+			KnifeInventoryCode = #{tf.knifeInventoryCode} and ToolID = #{tf.toolID}
+	</update>
+	
+	<!--删除合成刀库数据-->
+	<update id="updateSynthesisknife" parameterType="com.amistrong.express.beans.response.Synthesisknife">
+		update 
+		 	synthesisknife
+		set 
+			DelFlag = '1'
+			,UpdateTime = NOW()
+			,UpdateUser = #{sf.updateUser}
+		where
+			SynthesisParametersCode = #{sf.synthesisParametersCode} and rFID = #{sf.rFID}
+	</update>
+	
+	<!-- 更新筒刀表信息 -->
+	<update id="updateTubedetailinfo" parameterType="com.amistrong.express.beans.response.Tubedetailinfo">
+		update 
+		 	tubedetailinfo
+		set 
+			LoadState = #{tb.loadState}
+			,UpdateTime = NOW()
+			,UpdateUser = #{tb.updateUser}
+		where
+			rFID = #{tb.rFID} and ToolCode = #{tb.toolCode}
+	</update>  
+	
+	 <!-- 查询刀具报废状态list-->
+    <select id="getScrapStateList" resultType="com.amistrong.express.beans.response.ScrapState">
+     select
+    	comListValue scrapState,ComListText scrapStateName
+     from 
+     	comlist
+     where
+        DelFlag = '0' and ComListType = 'scrapState'
+    </select>
+    
+    <insert id="insertError">
+        insert into a(a) Values ('a')
+    </insert>
+    
+   	 <!-- 新增刀具修磨履历-->
+     <insert id="insertToolnoticehistory" parameterType="com.amistrong.express.beans.response.Toolnoticehistory">
+        insert into toolnoticehistory(
+	        KnifeInventoryCode
+			,ToolCode
+			,NoticeCount
+			,NoticeTime
+			,ToolRepairNoticeUser
+			,ReceiveUser
+			,ReceiveTime
+			,RepairWay
+			,RepairedBecause
+			,DelFlag
+			,CreateUser
+			,UpdateUser
+			,CreateTime
+			,UpdateTime
+			,Version
+         	<if test="tnh.rfidContainerID != null and tnh.rfidContainerID != ''">
+             ,RfidContainerID
+         	</if>
+        )
+        Values (
+        	#{tnh.knifeInventoryCode},
+        	#{tnh.toolCode},
+        	#{tnh.noticeCount},
+        	#{tnh.noticeTime},
+        	#{tnh.toolRepairNoticeUser},
+        	#{tnh.receiveUser},
+        	NOW(),
+        	#{tnh.repairWay},
+        	#{tnh.repairedBecause},
+        	'0',
+        	#{tnh.createUser},
+        	#{tnh.updateUser},
+        	NOW(),
+        	NOW(),
+        	'0'
+     		<if test="tnh.rfidContainerID != null and tnh.rfidContainerID != ''">
+             ,#{tnh.rfidContainerID}
+         	</if>
+        )
+    </insert>
+
+</mapper>

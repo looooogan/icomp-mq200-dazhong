@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.0.xsd">
+
+
+	<!--数据源属性 -->
+	<context:property-placeholder ignore-resource-not-found="true"
+	     location="/WEB-INF/classes/jdbc.properties,classpath*:log4j.properties" />
+	     
+	<!--数据源 -->
+	<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource"
+		destroy-method="close">
+		<property name="driverClassName" value="${jdbc.driverClassName}" />
+		<property name="url" value="${jdbc.url}" />
+		<property name="username" value="${jdbc.username}" />
+		<property name="password" value="${jdbc.password}" />
+	</bean>
+
+	<!-- 与spring集成 -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<property name="typeAliasesPackage" value="com.amistrong.express.beans" />
+		<property name="mapperLocations" value="classpath*:com/amistrong/express/dao/*.xml" />
+	</bean>
+	
+
+	<!-- 启动扫描com.pb.phone.controller下所有的controller --> 
+    <context:component-scan base-package="com.amistrong.express" />
+    
+	<!-- 扫描生成mapper 该配置不会扫描多余的XML，所以需要额外在上面配置XML路径（重复不要紧） -->
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="basePackage" value="com.amistrong.express.dao" />
+	</bean>
+	
+    
+	<!-- 开启事务注解驱动 -->
+	<tx:annotation-driven proxy-target-class="true" />
+
+	<!--事务 -->
+	<bean id="transactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+	
+	<bean class="com.amistrong.express.sap.SapInfoProMain"/>
+	
+</beans>

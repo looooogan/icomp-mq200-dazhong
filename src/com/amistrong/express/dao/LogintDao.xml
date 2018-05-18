@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"   
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+
+<mapper namespace="com.amistrong.express.dao.LoginDao">
+    
+    <!-- 查询用户是否存在 -->
+    <select id="queryUser" parameterType="Login" resultType="UserInfo">
+		SELECT		MST.userId,
+					MST.phoneNo,
+					MST.password,
+					MST.userType,
+					MST.token,
+					MST.deviceType,
+					MST.NICKNAME nickName,
+					MST.HEAD_IMG_URL headImgUrl
+		FROM		mst_login MST
+		WHERE		MST.phoneNo = #{login.phoneNo}
+    </select>
+    
+    <!-- 查询快递员信息 -->
+    <select id="queryLoginState" parameterType="UserInfo" resultType="LoginState">
+		SELECT		courierId,
+					AuthenticationState
+		FROM		frm_courier
+		WHERE		userId = #{userInfo.userId}
+    </select>
+    
+    <!-- 更新用户设备码 -->
+    <update id="upLoginToken" parameterType="Login">
+		UPDATE		mst_login
+		SET 		token = #{login.token},
+					deviceType = #{login.deviceType}
+		WHERE		phoneNo = #{login.phoneNo}
+    </update>
+    
+    <!-- 更新地理信息 -->
+    <update id="upPosition">
+		UPDATE		frm_position
+		SET 		longitude = #{login.longitude},
+					latitude = #{login.latitude}
+		WHERE		userId = #{userInfo.userId}
+    </update>
+<!--     查询是否是领队信息 -->
+    <select id="queryLeader" parameterType="java.lang.Integer" resultType="java.util.HashMap">
+        SELECT LEAGUE_TEAM_ID as leagueTeamId from t_bs_l_m 
+        where TEAM_DUTY = '1' and USERID = #{userId} limit 1
+    </select>
+</mapper>  

@@ -1,0 +1,648 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"   
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+
+<mapper namespace="com.amistrong.express.dao.C03S001Dao">
+    
+    <!-- 查询已经有的合成刀具信息-->
+    <select id="findskListByRfidList" resultType="com.amistrong.express.beans.response.Synthesisknife">
+    SELECT * FROM synthesisknife sk
+        WHERE sk.RFID IN
+        (SELECT r.RfidContainerID
+        FROM rfidcontainer r
+        WHERE r.DelFlag = '0' AND r.RfidCode = #{rfidCode}
+        ) AND sk.DelFlag = '0'
+        AND sk.SynthesisCutterNumber = '0'
+    </select>
+    
+    <!--  删除流转中的数据 -->
+   	<update id="updateBatchDeFlagByRfid" parameterType="com.amistrong.express.beans.response.Rfidcontainer">
+		UPDATE tooltransfer tt SET
+        tt.DelFlag = '1'
+        ,tt.UpdateTime=NOW()
+        ,tt.UpdateUser =#{rfBean.updateUser}
+        ,tt.Version = tt.Version + 1
+        WHERE
+        tt.RfidContainerID IN (
+        SELECT
+        rf.RfidContainerID
+        FROM
+        rfidcontainer
+        rf
+        WHERE
+        rf.RfidCode = #{rfBean.rfidCode}
+        )
+	</update>
+	
+   	
+   	<!-- 删除合成刀库中的数据 -->
+   	   	<update id="updateSynthesisknifeDeFlag" parameterType="com.amistrong.express.beans.response.Synthesisknife">
+		update 
+			synthesisknife 
+		set 
+			DelFlag = '1',
+			UpdateTime = NOW(),
+			UpdateUser = #{sk1.updateUser}
+		where
+			SynthesisParametersCode = #{sk1.synthesisParametersCode}
+		and 
+		    SynthesisParametersNumber = #{sk1.synthesisParametersNumber}
+	</update>
+	
+   	   	
+    <!-- 取得当前合成刀具组成-->
+    <select id="searchSynthesisparameters" resultType="com.amistrong.express.beans.response.Synthesisparameters">
+	   	select 
+	   		SynthesisParametersID synthesisParametersID,CreateType createType,configuration_code configurationCode,configuration_name configurationName,configuration_isdefault configurationisDefault,synthesisCount synthesisCount
+	   	from synthesisparameters 
+	   	where SynthesisParametersCode = #{syn.synthesisParametersCode} and DelFlag = '0'
+    </select>
+    
+    <!-- 为刀具生命周期查询零部件id -->
+    <select id="searchOplink" resultType="com.amistrong.express.beans.response.Oplink">
+   	    select
+        	PartsID partsID,
+        	ProcessID processID,
+        	EquipmentID equipmentID,
+        	AssemblyLineID assemblyLineID,
+        	AxleID axleID
+        from 
+        	oplink
+        where 
+        	SynthesisParametersID = #{oplink.synthesisParametersID}
+    </select>
+    
+    		
+			
+    <!--  查询刀具位置信息 -->
+    <select id="searchSynthesiscutterlocation" resultType="com.amistrong.express.beans.response.Synthesiscutterlocation">
+		SELECT 
+				sl.ToolCode toolCode,COUNT(1) toolCount,sl.SynthesisCutterNumber synthesisCutterNumber
+			FROM
+				synthesisparameters sp
+			INNER JOIN synthesiscutterlocation sl ON sp.SynthesisParametersID = sl.SynthesisParametersID
+			WHERE
+				sl.SynthesisParametersID = #{synthesiscutterlocation.synthesisParametersID} AND sp.DelFlag = '0' AND sl.DelFlag = '0'
+			GROUP BY ToolCode
+    </select>
+			
+   	<!-- 新建载体数据 -->
+	<insert id="insertRfidcontainer" parameterType="com.amistrong.express.beans.response.Storagerecord">
+       insert into rfidcontainer(
+		RfidContainerID
+        ,RfidCode
+        ,RfidReCount
+        ,BandType
+        ,QueryType
+        ,DelFlag
+        ,UpdateUser
+        ,UpdateTime
+        ,SystemLogUser
+        ,Version
+     	<if test="rfidcontainer.laserIdentificationCode != null and rfidcontainer.laserIdentificationCode != ''">
+			,LaserIdentificationCode
+		</if> 
+		)
+		Values (
+			#{rfidcontainer.rfidContainerID}
+			,#{rfidcontainer.rfidCode}
+			,#{rfidcontainer.rfidReCount}
+			,#{rfidcontainer.bandType}
+			,#{rfidcontainer.queryType}
+			,'0'
+			,#{rfidcontainer.updateUser}
+			,NOW()
+			,#{rfidcontainer.systemLogUser}
+			,'0'
+     	<if test="rfidcontainer.laserIdentificationCode != null and rfidcontainer.laserIdentificationCode != ''">
+			,#{rfidcontainer.laserIdentificationCode}
+		</if> 
+		)
+    </insert>
+    
+	<!-- 更新载体数据 --> 
+  	<update id="updateRfidcontainer" parameterType="com.amistrong.express.beans.response.Rfidcontainer">
+		update 
+			rfidcontainer 
+		set
+			<if test="entity.rfidReCount != null and entity.rfidReCount != ''">
+			RfidReCount = #{entity.rfidReCount},
+			</if> 
+			<if test="entity.laserIdentificationCode != null and entity.laserIdentificationCode != ''">
+			LaserIdentificationCode = #{entity.laserIdentificationCode},
+			</if> 
+            DelFlag = #{entity.delFlag},
+            UpdateTime = NOW()
+        where
+        	RfidContainerID = #{entity.rfidContainerID}
+	</update>
+	
+     <!-- 取得合成刀具序号 -->
+    <select id="searchBySynthesisknife" resultType="com.amistrong.express.beans.response.Synthesisknife">
+   	   	select
+         	SynthesisParametersNumber synthesisParametersNumber
+        from 
+        	synthesisknife 
+        where 
+        	SynthesisParametersCode = #{entity.synthesisParametersCode}
+        order by ABS(SynthesisParametersNumber) desc
+        limit 1
+    </select>
+    
+    
+   	<!-- 新增合成刀库数据-->
+	<insert id="insertSynthesisknife" parameterType="com.amistrong.express.beans.response.Synthesisknife">
+       insert into synthesisknife(
+        SynthesisCutterNumber
+        ,SynthesisParametersNumber
+        ,SynthesisParametersCode
+        ,BusinessFlowLnkID
+        ,KnifeInventoryCode
+        ,LoadState
+        ,OffloadType
+        ,InstallFlag
+        ,RFID
+        ,DelFlag
+        ,UpdateUser
+        ,UpdateTime
+        ,CreateTime
+        ,CreateUser
+        )
+		Values (
+			#{synthesisknife.synthesisCutterNumber}
+			,#{synthesisknife.synthesisParametersNumber}
+			,#{synthesisknife.synthesisParametersCode}
+			,#{synthesisknife.businessFlowLnkID}
+			,#{synthesisknife.knifeInventoryCode}
+			,#{synthesisknife.loadState}
+			,#{synthesisknife.offloadType}
+			,#{synthesisknife.installFlag}
+			,#{synthesisknife.rFID}
+			,'0'
+			,#{synthesisknife.updateUser}
+			,NOW()
+			,NOW()
+			,#{synthesisknife.updateUser}
+		)
+    </insert>
+    
+   <!-- 查询刀具信息-->
+    <select id="searchTool" resultType="com.amistrong.express.beans.response.Tool">
+	   SELECT
+		ToolID toolID
+		,LibraryCodeID libraryCodeID
+		,ToolCode toolCode
+		,ToolName toolName
+		,ToolType toolType
+		,ToolPic toolPic
+		,ToolUnitnumber toolUnitnumber
+		,ToolSpecifications toolSpecifications
+		,ToolSupplier toolSupplier
+		,ToolCutNumber toolCutNumber
+		,ToolBrand toolBrand
+		,ToolGrinding toolGrinding
+		,ToolConsumetype toolConsumetype
+		,ToolSharpennum toolSharpennum
+		,ToolMax toolMax
+		,ToolMin toolMin
+		,ToolNumber toolNumber
+		,standard standard
+		,ToolSharpenCriterion toolSharpenCriterion
+		,ToolLength toolLength
+		,ToolSharpenLength toolSharpenLength
+		,ToolTurnover toolTurnover
+		,QuotaProcessingVolume quotaProcessingVolume
+		,Per10k per10k
+		,PurchasingCycle purchasingCycle
+		,DelFlag delFlag
+		,UpdateUser updateUser
+		,CreateUser createUser
+		,Version version
+		,UniquelyIdentify uniquelyIdentify
+		,BeiMin beiMin
+		,BeiMax beiMax
+		from tool
+	   	where ToolID = #{tool.toolID}
+    </select>	
+    
+   	<!-- 新增刀具全生命周期表-->
+	<insert id="insertToolwholelifecycle" parameterType="com.amistrong.express.beans.response.Toolwholelifecycle">
+       insert into toolwholelifecycle(
+		ToolWholeLifecycleID
+		,BusinessFlowLnkID
+		,HandSetID
+		,ProcessAmount
+		,ToolID
+		,PartsID
+		,KnifeInventoryCode
+		,DelFlag
+		,CreateUser
+		,CreateTime
+		,UpdateUser
+		,UpdateTime
+		,Version
+        )
+		Values (
+			#{toolwholelifecycle.toolWholeLifecycleID}
+			,#{toolwholelifecycle.businessFlowLnkID}
+			,#{toolwholelifecycle.handSetID}
+			,#{toolwholelifecycle.processAmount}
+			,#{toolwholelifecycle.toolID}
+			,#{toolwholelifecycle.partsID}
+			,#{toolwholelifecycle.knifeInventoryCode}
+			,'0'
+			,#{toolwholelifecycle.createUser}
+			,NOW()
+			,#{toolwholelifecycle.updateUser}
+			,NOW()
+			,'0'
+		)
+    </insert>
+	
+	  <!-- 根据载体ID查询合成刀具编码-->
+    <select id="getSynCodeByRfidConner" resultType="com.amistrong.express.beans.response.Synthesisknife">
+	   SELECT
+        s.SynthesisParametersCode synthesisParametersCode
+        ,s.SynthesisCutterNumber synthesisCutterNumber
+        ,s.SynthesisParametersNumber synthesisParametersNumber
+        ,s.BusinessFlowLnkID businessFlowLnkID
+        ,s.EquipmentID equipmentID
+        ,s.KnifeInventoryCode knifeInventoryCode
+        ,s.LoadState loadState
+        ,s.OffloadType offloadType
+        ,s.InstallFlag installFlag
+        ,s.RFID rFID
+        ,s.XPoint xPoint
+        ,s.YPoint yPoint
+        ,s.KnifeMan knifeMan
+        ,sp.CreateType createType
+        from synthesisknife s
+        inner join synthesisparameters sp on s.SynthesisParametersCode = sp.SynthesisParametersCode
+	   	where s.DelFlag = '0' and sp.DelFlag = '0'
+	   	<if test="skentity.rFID != null and skentity.rFID != ''">
+			and s.rFID = #{skentity.rFID}
+		</if>
+		<if test="skentity.synthesisParametersCode != null and skentity.synthesisParametersCode != ''">
+			and s.SynthesisParametersCode = #{skentity.synthesisParametersCode}
+		</if>  
+		limit 1
+    </select>	
+    
+    <!-- 查询合成刀组成刀具list-->
+    <select id="getSynthesisToolListBySPCode" resultType="com.amistrong.express.beans.response.SynthesisEntity">
+	  SELECT
+	    t.ToolID toolID,
+		t.ToolCode toolCode,
+		t.ToolConsumetype toolConsumetypeID,
+		t.ToolGrinding toolGrinding,
+		t.ToolType toolType,
+  		c.ComListText toolConsumetype,
+		t2.toolCount
+	 FROM
+		tool t
+	 LEFT JOIN comlist c on t.ToolConsumetype = c.ComListValue and c.ComListType = 'ToolConsumetype' and c.DelFlag = '0'
+	 LEFT JOIN (
+		SELECT 
+				sl.ToolCode ToolCode,COUNT(1) toolCount
+			FROM
+				synthesisparameters sp
+			INNER JOIN synthesiscutterlocation sl ON sp.SynthesisParametersID = sl.SynthesisParametersID
+			WHERE
+				sp.SynthesisParametersCode = #{spCode} AND sp.DelFlag = '0' AND sl.DelFlag = '0'
+			GROUP BY ToolCode) t2 ON t.ToolCode = t2.ToolCode
+	 WHERE
+		t.ToolCode IN (
+			SELECT DISTINCT
+				ToolCode
+			FROM
+				synthesisparameters sp
+			INNER JOIN synthesiscutterlocation sl ON sp.SynthesisParametersID = sl.SynthesisParametersID
+			WHERE
+				sp.SynthesisParametersCode = #{spCode}
+		) and t.DelFlag = '0'
+	ORDER BY t.ToolCode
+    </select>
+
+	<!-- 查询合成刀组成刀具list-->
+	<select id="getSynthesisToolListBySPCodeAndConfCode" resultType="com.amistrong.express.beans.response.SynthesisEntity">
+		SELECT
+		t.ToolID toolID,
+		t.ToolCode toolCode,
+		t.ToolConsumetype toolConsumetypeID,
+		t.ToolGrinding toolGrinding,
+		t.ToolType toolType,
+		c.ComListText toolConsumetype,
+		t2.toolCount
+		FROM
+		tool t
+		LEFT JOIN comlist c on t.ToolConsumetype = c.ComListValue and c.ComListType = 'ToolConsumetype' and c.DelFlag = '0'
+		LEFT JOIN (
+		SELECT
+		sl.ToolCode ToolCode,COUNT(1) toolCount
+		FROM
+		synthesisparameters sp
+		INNER JOIN synthesiscutterlocation sl ON sp.configuration_code = sl.configuration_code
+		WHERE
+		sp.SynthesisParametersCode = #{spCode} AND sp.DelFlag = '0' AND sl.DelFlag = '0'
+		GROUP BY ToolCode) t2 ON t.ToolCode = t2.ToolCode
+		WHERE
+		t.ToolCode IN (
+		SELECT DISTINCT
+		ToolCode
+		FROM
+		synthesisparameters sp
+		INNER JOIN synthesiscutterlocation sl ON sp.SynthesisParametersID = sl.SynthesisParametersID
+		WHERE
+		sp.SynthesisParametersCode = #{spCode}
+		) and t.DelFlag = '0'
+		ORDER BY t.ToolCode
+	</select>
+
+	<!-- 新增筒刀数据-->
+	<insert id="insertTubedetailinfo" parameterType="com.amistrong.express.beans.response.Tubedetailinfo">
+       insert into tubedetailinfo(
+         ID
+		,SynthesisParametersCode
+		,rFID
+		,SynthesisCutterNumber
+		,ToolCode
+		,LoadState
+		,ToolCount
+		,grindingsum
+		,DelFlag
+		,CreateTime
+		,UpdateTime
+		,CreateUser
+		,UpdateUser
+		,Version
+        )
+		Values (
+			 #{tubedetailinfo.ID}
+			,#{tubedetailinfo.synthesisParametersCode}
+			,#{tubedetailinfo.rFID}
+			,#{tubedetailinfo.synthesisCutterNumber}
+			,#{tubedetailinfo.toolCode}
+			,#{tubedetailinfo.loadState}
+			,#{tubedetailinfo.toolCount}
+			,#{tubedetailinfo.grindingsum}
+			,'0'
+			,NOW()
+			,NOW()
+			,#{tubedetailinfo.createUser}
+			,#{tubedetailinfo.updateUser}
+			,'0'
+		)
+    </insert>
+    
+    <!-- 根据材料号查询库存信息 -->
+    <select id="getknifeinventoryinfos" resultType="com.amistrong.express.beans.response.Vknifeinventoryinfo">
+        SELECT
+        t.ToolID AS toolID,
+        t.ToolCode AS toolCode,
+        t.LibraryCodeID AS libraryCodeID,
+        (SELECT COUNT(1) FROM knifeinventory kn WHERE kn.ToolID = t.toolID AND kn.DelFlag='0') as knifelnventoryNumber,
+        t.ToolConsumetype AS toolConsumetype
+        FROM tool t
+        WHERE t.ToolCode = #{vk.toolCode}
+    </select>
+    
+  	<!-- 新增库存信息-->
+	<insert id="insertKnifeinventory" parameterType="com.amistrong.express.beans.response.Knifeinventory">
+       insert into knifeinventory(
+		RfidContainerID
+		,ToolID
+		,KnifeInventoryCode
+		,ProcuredBatch
+		,KnifelnventoryNumber
+		,KnifeInventoryType
+		,ToolDurable
+		,ToolSharpennum
+		,ToolSharpenCriterion
+		,ToolLength
+		,ToolSharpenLength
+		,DelFlag
+		,CreateTime
+		,UpdateTime
+		,CreateUser
+		,UpdateUser
+		,Version
+        )
+		Values (
+			#{kn.rfidContainerID}
+			,#{kn.toolID}
+			,#{kn.knifeInventoryCode}
+			,#{kn.procuredBatch}
+			,#{kn.knifelnventoryNumber}
+			,#{kn.knifeInventoryType}
+			,#{kn.toolDurable}
+			,#{kn.toolSharpennum}
+			,#{kn.toolSharpenCriterion}
+			,#{kn.toolLength}
+			,#{kn.toolSharpenLength}
+			,'0'
+			,NOW()
+			,NOW()
+			,#{kn.updateUser}
+			,#{kn.updateUser}
+			,'0'
+		)
+    </insert>
+    
+	<!-- 查询当前刀具标准是否初始化 -->
+    <select id="getIsHasToolInit" resultType="com.amistrong.express.beans.response.Vknifeinventoryinfo">
+         SELECT
+        (
+        SELECT
+        rf.RfidContainerID
+        FROM
+        rfidcontainer rf
+        INNER JOIN knifeinventory kn1 ON rf.RfidContainerID = kn1.RfidContainerID
+        WHERE
+        kn1.DelFlag = 0
+        AND rf.DelFlag = 0
+        AND kn1.ToolID = t.ToolID
+        LIMIT 1
+        ) AS RfidContainerID,
+        t.ToolID AS ToolID,
+        t.ToolCode AS ToolCode,
+        t.LibraryCodeID AS LibraryCodeID,
+        (
+        SELECT
+        SUM(kn.KnifelnventoryNumber)
+        FROM
+        knifeinventory kn
+        WHERE
+        kn.ToolID = t.ToolID
+        AND kn.DelFlag = '0'
+        ) AS KnifelnventoryNumber,
+        t.ToolConsumetype AS ToolConsumetype
+        FROM
+        tool t
+        WHERE
+        t.DelFlag = '0'
+        AND t.ToolCode = #{v.toolCode}
+        LIMIT 1
+    </select>
+    
+	<delete id="deleteTubedetailinfo" parameterType="com.amistrong.express.beans.response.Tubedetailinfo">
+      delete from tubedetailinfo where SynthesisParametersCode = #{tu.synthesisParametersCode}
+    </delete>
+    
+	<delete id="deleteTubedetailinfoByRFID" parameterType="java.lang.String">
+      delete from tubedetailinfo where rFID = #{rfidID}
+    </delete>
+    
+	<!-- 查询当前标签筒刀详细-->
+    <select id="getTubedetailinfoListBySPCode" resultType="com.amistrong.express.beans.response.Tubedetailinfo">
+        select
+        	SynthesisParametersCode synthesisParametersCode,
+        	rFID,
+        	ToolCode toolCode,
+        	ToolCount toolCount
+        from 
+        	tubedetailinfo
+        where
+        	rFID = #{rfid} and LoadState = '0'
+    </select>
+    
+	<!-- 新增流转统计表数据-->
+   	<insert id="insertTooltransferTotalInfo" parameterType="com.amistrong.express.beans.response.TooltransferTotal">
+       insert into tooltransferTotal(
+		ToolCode
+		,CreateTime
+		,UpdateTime
+		,CreateUser
+		,UpdateUser
+		,Version
+		<if test="tst.productionLineSum != null and tst.productionLineSum != ''">
+			,ProductionLineSum
+		</if>
+		<if test="tst.spareKnifeSum != null and tst.spareKnifeSum != ''">
+			,SpareKnifeSum
+		</if>
+        )
+		Values (
+			#{tst.toolCode}
+			,NOW()
+			,NOW()
+			,#{tst.createUser}
+			,#{tst.updateUser}
+			,'0'
+			<if test="tst.productionLineSum != null and tst.productionLineSum != ''">
+			,#{tst.productionLineSum}
+			</if>
+			<if test="tst.spareKnifeSum != null and tst.spareKnifeSum != ''">
+			,#{tst.spareKnifeSum}
+			</if>
+		)
+    </insert>
+    
+   	<!-- 清除原筒刀的RFID -->
+ 	 <update id="updateTubedetailinfoRfidEmpty" parameterType="java.lang.String">
+		update 
+			tubedetailinfo 
+		set 
+			rFID = '',
+			UpdateTime = NOW()
+		where
+			rFID = #{rfidID}
+	</update>
+	
+	<!-- 查询当前标签筒刀详细-->
+    <select id="searchSynthesiscutterlocationByRfid" resultType="com.amistrong.express.beans.response.Synthesiscutterlocation">
+        SELECT
+			sl.ToolCode toolCode,
+			COUNT(1) toolCount,
+			sl.SynthesisCutterNumber synthesisCutterNumber
+		FROM
+			synthesisparameters sp
+		INNER JOIN synthesiscutterlocation sl ON sp.SynthesisParametersID = sl.SynthesisParametersID
+		WHERE
+			sl.SynthesisParametersID = (
+				SELECT
+					SynthesisParametersID
+				FROM
+					synthesisparameters
+				WHERE
+					SynthesisParametersCode = (
+						SELECT
+							SynthesisParametersCode
+						FROM
+							synthesisknife
+						WHERE
+							rFID = #{rfidID}
+						LIMIT 1
+					)
+			)
+		AND sp.DelFlag = '0'
+		AND sl.DelFlag = '0'
+		GROUP BY
+			ToolCode
+    </select>
+    
+	<!-- 查询筒刀组成刀具list-->
+    <select id="getTubedetailinfoList" resultType="com.amistrong.express.beans.response.SynthesisEntity">
+		       SELECT
+					ToolCode toolCode,
+					grindingsum
+				FROM
+					tubedetailinfo
+				WHERE
+					rFID = #{tubeInfo.rFID}
+				AND SplitTime = (
+					SELECT
+						SplitTime
+					FROM
+						tubedetailinfo
+					WHERE
+						rFID = #{tubeInfo.rFID}
+					ORDER BY
+						SplitTime DESC
+					LIMIT 1
+				)
+			  ORDER BY toolCode
+    </select>
+    
+	<!--查询授权开关信息-->
+	<select id="searchOnoffByBusinessID" resultType="com.amistrong.express.beans.response.Onoff">
+       	  SELECT OnOffState from onoff where OnOffCode = #{businessID} and DelFlag = '0'
+	</select>
+
+
+	<!---->
+	<select id="searchReplaceTool" resultType="com.amistrong.express.beans.response.SynthesisEntity">
+		 SELECT
+			t.ToolID toolID,
+			t.ToolCode toolCode,
+			t.ToolConsumetype toolConsumetypeID,
+			t.ToolGrinding toolGrinding,
+			t.ToolType toolType,
+			c.ComListText toolConsumetype,
+			t2.toolCount
+	 	FROM
+			tool t
+	 	LEFT JOIN comlist c on t.ToolConsumetype = c.ComListValue and c.ComListType = 'ToolConsumetype' and c.DelFlag = '0'
+	 	LEFT JOIN (
+			SELECT
+					sl.ToolCode ToolCode,COUNT(1) toolCount
+				FROM
+					synthesisparameters sp
+				INNER JOIN synthesiscutterlocation sl ON sp.SynthesisParametersID = sl.SynthesisParametersID
+				WHERE
+					sp.SynthesisParametersCode = #{spCode} AND sp.DelFlag = '0' AND sl.DelFlag = '0'
+				GROUP BY ToolCode) t2 ON t.ToolCode = t2.ToolCode
+		 WHERE
+			t.ToolCode IN (
+				SELECT DISTINCT
+					ToolCode
+				FROM
+					synthesisparameters sp
+				INNER JOIN synthesiscutterlocation sl ON sp.SynthesisParametersID = sl.SynthesisParametersID
+				WHERE
+					sp.SynthesisParametersCode = #{spCode}
+			) and t.DelFlag = '0'
+		ORDER BY t.ToolCode
+
+	</select>
+    
+</mapper>

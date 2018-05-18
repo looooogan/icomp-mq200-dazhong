@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"   
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+
+<mapper namespace="com.amistrong.express.dao.C01S004Dao">
+    
+    <!-- 取得补领出库申请列表-->
+    <select id="getReplacementList" resultType="com.amistrong.express.beans.response.Replacement">
+			SELECT DISTINCT
+				case 
+					when 
+					ReplacementFlag = '1' then CONCAT(DATE_FORMAT(ApplyTime, '%Y%m%d'),'(借)')
+					when ReplacementFlag = '2' then CONCAT(DATE_FORMAT(ApplyTime, '%Y%m%d'),'(特)')
+					 else DATE_FORMAT(ApplyTime, '%Y%m%d')
+				 end applyTime,
+				ApplyID AS applyID,
+				ApplyUser as applyUser,
+				ReplacementFlag replacementFlag
+			FROM
+				replacement
+			WHERE
+				DelFlag = '0'
+			GROUP BY
+				DATE_FORMAT(ApplyTime, '%Y%m%d') DESC,
+				ApplyID,
+				ReplacementFlag
+    </select>
+    
+	   <!-- 查询申领详细信息-->
+    <select id="getReplacementApply" resultType="com.amistrong.express.beans.response.Replacement">
+		select
+		r.AppliedNumber appliedNumber,
+		r.ToolCode toolCode,
+		t.ToolID toolID,
+		t.LibraryCodeID libraryCodeID,
+		t.ToolConsumetype toolType,
+		r.ReplacementID replacementID,
+		r.AppliedTotalNumber appliedTotalNumber,
+	   k.KnifelnventoryNumber knifelnventoryNumber,
+		rf.RfidCode rfidCode
+		from
+		replacement r
+		INNER JOIN tool t on r.ToolCode = t.ToolCode
+		INNER JOIN (select SUM(KnifelnventoryNumber) KnifelnventoryNumber,ToolID,RfidContainerID FROM knifeinventory WHERE DelFlag = '0' GROUP BY ToolID) k on t.ToolID = k.ToolID
+		INNER JOIN rfidcontainer rf on k.RfidContainerID = rf.RfidContainerID
+		where t.DelFlag='0' and r.DelFlag='0' and rf.DelFlag='0'
+		AND r.ApplyID = #{raentity.applyID}
+		AND DATE_FORMAT(r.ApplyTime,'%Y-%m-%d')= DATE_FORMAT(#{raentity.applyTime},'%Y-%m-%d')
+		AND r.ReplacementFlag = #{raentity.replacementFlag}
+    </select>
+    
+    <!-- 查询单号查询申请信息-->
+   	<select id="searchReplacement" resultType="com.amistrong.express.beans.response.Replacement">
+		select
+			ReplacementID replacementID
+			,ToolCode toolCode
+			,AppliedNumber appliedNumber
+			,ApplyUser applyUser
+			,ApplyTime applyTime
+			,ReplacementReason replacementReason
+			,ReceiveUser receiveUser
+			,ReceiveTime receiveTime
+			,ProcessingStatus processingStatus
+			,DepartmentID departmentID
+			,ReplacementFlag replacementFlag
+			,Version version
+			,ApplyID applyID
+			,AppliedTotalNumber appliedTotalNumber
+		from 
+			replacement 
+		where
+			ReplacementID = #{reentity.replacementID} and ToolCode = #{reentity.toolCode}
+    </select>
+    
+   	<!-- 插入流转表 -->
+    <insert id="insertTooltransfer" parameterType="com.amistrong.express.beans.response.Tooltransfer">
+        insert into tooltransfer(
+        	RfidContainerID,
+        	ToolID,
+        	ToolState,
+        	ToolDurable,
+        	KnifeInventoryCode,
+        	BusinessFlowLnkID,
+        	InstallationState,
+        	ToolThisState,
+        	StockState,
+        	CreateUser,
+        	UpdateUser,
+        	CreateTime,
+        	UpdateTime,
+        	DelFlag,
+        	Version
+        )
+        Values (
+        	#{tt.rfidContainerID},
+        	#{tt.toolID},
+        	#{tt.toolState},
+        	#{tt.toolDurable},
+        	#{tt.knifeInventoryCode},
+        	#{tt.businessFlowLnkID},
+        	#{tt.installationState},
+        	#{tt.toolThisState},
+        	#{tt.stockState},
+        	#{tt.createUser},
+        	#{tt.updateUser},
+        	NOW(),
+        	NOW(),
+        	'0',
+        	'1'
+        )
+    </insert>
+    
+   	<!-- 插入报废表处理 -->
+    <insert id="insertScrap" parameterType="com.amistrong.express.beans.response.Scrap">
+        insert into scrap(
+	        scrapID
+	        ,toolType
+	        ,BusinessID
+	        ,Material
+	        ,toolID
+	        ,scrapCause
+	        ,scrapState
+	        ,scrapTime
+	        ,authorizationID
+	        ,CreateUser
+	        ,UpdateUser
+	        ,CreateTime
+	        ,UpdateTime
+	        ,DelFlag
+	        <if test="scrap.scrapNumber != null and scrap.scrapNumber != ''">
+	         ,scrapNumber
+	         </if>
+        )
+        Values (
+        	#{scrap.scrapID},
+        	#{scrap.toolType},
+        	#{scrap.businessID},
+        	#{scrap.material},
+        	#{scrap.toolID},
+        	#{scrap.scrapCause},
+        	#{scrap.scrapState},
+        	NOW(),
+        	#{scrap.authorizationID},
+        	#{scrap.createUser},
+        	#{scrap.updateUser},
+        	NOW(),
+        	NOW(),
+        	'0'
+        	<if test="scrap.scrapNumber != null and scrap.scrapNumber != ''">
+	         ,#{scrap.scrapNumber}
+	         </if>
+        )
+    </insert>
+    
+    <!-- 更新申请表 -->
+    <update id="updateRedempentity" parameterType="com.amistrong.express.beans.response.Replacement">
+		update 
+			replacement
+		set 
+			AppliedNumber = #{redempentity.appliedNumber},
+			ReceiveUser = #{redempentity.receiveUser},
+			ReceiveTime = NOW(),
+			UpdateTime = NOW(),
+			UpdateUser = #{redempentity.updateUser}
+			<if test="redempentity.delFlag != null and redempentity.delFlag != ''">
+			,DelFlag = #{redempentity.delFlag}
+			</if>
+		where
+			ReplacementID = #{redempentity.replacementID} and ToolCode = #{redempentity.toolCode}
+	</update>
+	
+    <!-- 插入刀具出库履历 -->
+    <insert id="insertTlentity" parameterType="com.amistrong.express.beans.response.Toollibraryhistory">
+        insert into toollibraryhistory(
+	        ToolLiberyID
+			,KnifeInventoryCode
+			,ToolID
+			,ReceiveUser
+			,ReceiveCount
+			,ReceiveTime
+			,LibraryCause
+			,UpdateTime
+			,CreateTime
+			,UpdateUser
+			,CreateUser
+			,Version
+			,DelFlag
+			,State
+        )
+        Values (
+        	#{tlentity.toolLiberyID},
+        	#{tlentity.knifeInventoryCode},
+        	#{tlentity.toolID},
+        	#{tlentity.receiveUser},
+        	#{tlentity.receiveCount},
+        	NOW(),
+        	#{tlentity.libraryCause},
+        	NOW(),
+        	NOW(),
+        	#{tlentity.updateUser},
+        	#{tlentity.createUser},
+        	'1',
+        	'0',
+        	#{tlentity.state}
+        )
+    </insert>
+</mapper>

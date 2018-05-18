@@ -1,0 +1,444 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"   
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+
+<mapper namespace="com.amistrong.express.dao.C01S003Dao">
+   
+    
+    <!-- 根据RFID查询库存信息-->
+    <select id="getKnifeinventoryByRfid" resultType="com.amistrong.express.beans.response.Knifeinventory">
+    SELECT
+        RfidContainerID rfidContainerID
+        ,KnifeInventoryCode knifeInventoryCode
+        ,ProcuredBatch procuredBatch
+        ,ToolID toolID
+        ,KnifeInventoryType knifeInventoryType
+        ,ToolDurable2 toolDurable2
+        ,KnifelnventoryNumber knifelnventoryNumber
+        ,ToolDurable toolDurable
+        ,ToolSharpennum toolSharpennum
+        ,ToolSharpenCriterion toolSharpenCriterion
+        ,ToolLength toolLength
+        ,ToolSharpenLength toolSharpenLength
+        ,DelFlag delFlag
+        ,UpdateTime updateTime
+        ,UpdateUser updateUser
+        ,CreateTime createTime
+        ,CreateUser createUser
+        ,Version version
+     from 
+     	knifeinventory
+     where
+     	RfidContainerID = #{rfid}
+     and
+        DelFlag = '0'
+    </select>
+        
+    <!--取得要换领出库的刀具信息-->
+	<select id="getRedemptionapplyInfo" resultType="com.amistrong.express.beans.response.Tool">
+       SELECT
+		tl.ToolID as toolID
+		,tl.LibraryCodeID as tibraryCodeID
+		,tl.ToolCode as toolCode
+		,tl.ToolConsumetype as toolConsumetype
+		,tl.DelFlag as delFlag
+		,tl.LibraryCodeID libraryCodeID
+		,kn.KnifelnventoryNumber as knifelnventoryNumber
+		,tl.ToolType toolType
+		,(select RfidCode from rfidcontainer WHERE RfidContainerID = (select RfidContainerID from knifeinventory WHERE ToolID = #{tool.toolID})) rfidCode
+		from tool tl
+		inner join knifeinventory kn on kn.ToolID = tl.ToolID
+		where tl.DelFlag = '0' and kn.DelFlag = '0' AND tl.ToolID=#{tool.toolID}
+    </select>  
+    
+	<!--查询刀具申请数量-->
+	<select id="getRequestNumByToolCode" resultType="java.lang.Integer">
+       SELECT 
+       		sum(AppliedNumber-ReceiveNumber) 
+	   from 
+	   		redemptionapplied 
+   	   where ProcessingStatus != '4' 
+   			and DelFlag = '0' 
+   			and ToolCode = #{toolCode}
+    </select>  
+    
+	<!--取得换领申请的信息-->
+	<select id="getRedemptionappliedList"  parameterType="java.lang.String" resultType="com.amistrong.express.beans.response.Redemptionapplied">
+	    <![CDATA[
+       SELECT
+			RedemptionAppliedID redemptionAppliedID
+			,AppliedNumber appliedNumber
+			,StockNumber stockNumber
+			,ReturnNumber returnNumber
+			,BrokenNumber brokenNumber
+			,LostNumber lostNumber
+			,ReceiveNumber receiveNumber
+			,ApplyUser applyUser
+			,ReceiveUser receiveUser
+			,RfidList rfidList
+		from
+			redemptionapplied
+		where ToolCode = #{toolCode} and DelFlag = '0' and ProcessingStatus != '4'
+		order by CreateTime
+		]]>
+    </select>  
+    
+	<update id="updateRedemptionapplied" parameterType="com.amistrong.express.beans.response.Redemptionapplied">
+		update 
+			redemptionapplied
+		set 
+			ReceiveNumber = #{ra.receiveNumber},
+			ReceiveUser = #{ra.receiveUser},
+			ProcessingStatus = #{ra.processingStatus},
+			ReceiveTime = NOW(),
+			UpdateTime = NOW(),
+			UpdateUser = #{ra.receiveUser}
+			<if test="ra.delFlag != null and ra.delFlag != ''">
+			,DelFlag = #{ra.delFlag}
+			</if>
+		where
+			RedemptionAppliedID = #{ra.redemptionAppliedID}
+	</update>
+	
+	 
+	<!--查询装备用刀容器的载体id-->
+	<select id="getContainercarrierList"  resultType="com.amistrong.express.beans.response.Containercarrier">
+       	SELECT
+			RfidContainerID rfidContainerID
+		from containercarrier
+		where
+			ContainerCarrierType = #{cc.containerCarrierType} and DelFlag = '0'
+	</select>
+	
+	<!--先查询原有的周转量-->
+	<select id="searchTooltransferList" resultType="com.amistrong.express.beans.response.Tooltransfer">
+       	 SELECT
+        RfidContainerID rfidContainerID
+        ,KnifeInventoryCode knifeInventoryCode
+        ,ToolID toolID
+        ,ProcuredBatch procuredBatch
+        ,BusinessFlowLnkID businessFlowLnkID
+        ,ProcessAmount processAmount
+        ,ToolDurable toolDurable
+        ,ToolSharpennum toolSharpennum
+        ,ToolSharpenCriterion toolSharpenCriterion
+        ,ToolLength toolLength
+        ,ToolSharpenLength toolSharpenLength
+        ,IFNULL(UsageCounter,0) usageCounter
+        ,ToolGrindingLength toolGrindingLength
+        ,InstallationState installationState
+        ,ToolState toolState
+        ,ReplacementFlag replacementFlag
+        ,ConfirmedUser confirmedUser
+        ,ToolThisState toolThisState
+        ,StockState stockState
+        ,discardeFlag discardeFlag
+        ,DelFlag DelFlag
+        ,UpdateTime updateTime
+        ,UpdateUser updateUser
+        ,CreateTime createTime
+        ,CreateUser createUser
+        ,Version version
+        from tooltransfer
+        where 
+        	RfidContainerID = #{tt.rfidContainerID} 
+        	and ToolID = #{tt.toolID} 
+        	and DelFlag = #{tt.delFlag}
+	</select>
+	
+	<!--更新刀具流转信息-->
+	<update id="updateTooltransfer" parameterType="com.amistrong.express.beans.response.Tooltransfer">
+		update 
+		 	tooltransfer
+		set 
+			UpdateTime = NOW()
+			<if test="tt.updateUser != null and tt.updateUser != ''">
+			,UpdateUser = #{tt.updateUser}
+			</if>
+			<if test="tt.toolDurable != null and tt.toolDurable != ''">
+			,ToolDurable = #{tt.toolDurable}
+			</if>
+         	<if test="tt.stockState != null and tt.stockState != ''">
+             ,StockState = #{tt.stockState}
+         	</if>
+         	<if test="tt.businessFlowLnkID != null and tt.businessFlowLnkID != ''">
+             ,BusinessFlowLnkID = #{tt.businessFlowLnkID}
+         	</if>
+         	<if test="tt.businessFlowLnkID != null and tt.businessFlowLnkID != ''">
+             ,BusinessFlowLnkID = #{tt.businessFlowLnkID}
+         	</if>
+         	<if test="tt.installationState != null and tt.installationState != ''">
+             ,InstallationState = #{tt.installationState}
+         	</if>
+         	<if test="tt.toolState != null and tt.toolState != ''">
+             ,ToolState = #{tt.toolState}
+         	</if>
+         	<if test="tt.usageCounter != null and tt.usageCounter != ''">
+             ,UsageCounter = #{tt.usageCounter}
+         	</if>
+		where
+			RfidContainerID = #{tt.rfidContainerID} 
+        	and ToolID = #{tt.toolID} 
+        	and DelFlag = #{tt.delFlag}
+	</update>
+	
+	<!--查询载体ID-->
+	<select id="getRfidcontainer" resultType="com.amistrong.express.beans.response.Rfidcontainer">
+       	  SELECT RfidContainerID rfidContainerID from rfidcontainer where RfidCode = #{r.rfidCode} and DelFlag = '0'
+	</select>
+	
+	<!--获取刀具入库编码-->
+	<select id="getKnifeinventory" resultType="com.amistrong.express.beans.response.Knifeinventory">
+       	  SELECT KnifeInventoryCode knifeInventoryCode,KnifelnventoryNumber knifelnventoryNumber
+       	  from knifeinventory where RfidContainerID = #{k.rfidContainerID}
+	</select>
+	
+	<!--插入到流转表-->
+	<insert id="insertTooltransfer"  parameterType="com.amistrong.express.beans.response.Tooltransfer">
+       	insert into tooltransfer(
+        RfidContainerID
+        ,KnifeInventoryCode
+        ,ToolID
+        ,BusinessFlowLnkID
+        ,ToolDurable
+        ,ToolState
+        ,StockState
+        ,DelFlag
+        ,UpdateTime
+        ,UpdateUser
+        ,CreateTime
+        ,CreateUser
+         ,Version
+         <if test="tt.toolSharpennum != null and tt.toolSharpennum != ''">
+             ,ToolSharpennum
+         </if>
+         <if test="tt.toolSharpenCriterion != null and tt.toolSharpenCriterion != ''">
+             ,ToolSharpenCriterion
+         </if>
+         <if test="tt.procuredBatch != null and tt.procuredBatch != ''">
+             ,ProcuredBatch
+         </if>
+         <if test="tt.toolLength != null and tt.toolLength != ''">
+             ,ToolLength
+         </if>
+         <if test="tt.toolSharpenLength != null and tt.toolSharpenLength != ''">
+             ,ToolSharpenLength
+         </if>
+         <if test="tt.toolGrindingLength != null and tt.toolGrindingLength != ''">
+             ,ToolGrindingLength
+         </if>
+         <if test="tt.usageCounter != null and tt.usageCounter != ''">
+             ,UsageCounter
+         </if>
+         <if test="tt.usageCounter == 0">
+             ,UsageCounter
+         </if>
+         <if test="tt.installationState != null and tt.installationState != ''">
+             ,InstallationState
+         </if>
+         <if test="tt.toolThisState != null and tt.toolThisState != ''">
+             ,ToolThisState
+         </if>
+         <if test="tt.processAmount != null and tt.processAmount != ''">
+             ,ProcessAmount
+         </if>
+         
+        )
+        Values (
+            #{tt.rfidContainerID}
+            ,#{tt.knifeInventoryCode}
+            ,#{tt.toolID}
+            ,#{tt.businessFlowLnkID}
+            ,#{tt.toolDurable}
+            ,#{tt.toolState}
+            ,#{tt.stockState}
+            ,'0'
+            ,NOW()
+            ,#{tt.updateUser}
+            ,NOW()
+            ,#{tt.createUser}
+             ,'0'
+            <if test="tt.toolSharpennum != null and tt.toolSharpennum != ''">
+             ,#{tt.toolSharpennum}
+         	</if>
+         	 <if test="tt.toolSharpenCriterion != null and tt.toolSharpenCriterion != ''">
+             ,#{tt.toolSharpenCriterion}
+         	</if>
+         	<if test="tt.procuredBatch != null and tt.procuredBatch != ''">
+             ,#{tt.procuredBatch}
+         	</if>
+         	<if test="tt.toolLength != null and tt.toolLength != ''">
+             ,#{tt.toolLength}
+         	</if>
+         	<if test="tt.toolSharpenLength != null and tt.toolSharpenLength != ''">
+             ,#{tt.toolSharpenLength}
+         	</if>
+         	<if test="tt.toolGrindingLength != null and tt.toolGrindingLength != ''">
+             ,#{tt.toolGrindingLength}
+         	</if>
+         	<if test="tt.usageCounter != null and tt.usageCounter != ''">
+             ,#{tt.usageCounter}
+         	</if>
+      	    <if test="tt.usageCounter == 0">
+             ,#{tt.usageCounter}
+         	</if>
+         	<if test="tt.installationState != null and tt.installationState != ''">
+             ,#{tt.installationState}
+	         </if>
+	         <if test="tt.toolThisState != null and tt.toolThisState != ''">
+             ,#{tt.toolThisState}
+         	</if>
+         	<if test="tt.processAmount != null and tt.processAmount != ''">
+             ,#{tt.processAmount}
+         	</if>
+        )
+	</insert>
+					
+	<!--更新库存表-->
+	<update id="updateKnifeinventory" parameterType="com.amistrong.express.beans.response.Knifeinventory">
+		update knifeinventory
+		set 
+			KnifelnventoryNumber = #{k.knifelnventoryNumber}
+			,UpdateTime = NOW()
+			,UpdateUser = #{k.updateUser}
+			<if test="k.delFlag != null and k.delFlag != ''">
+			,DelFlag = #{k.delFlag}
+			</if>
+		where
+			RfidContainerID = #{k.rfidContainerID} and DelFlag = '0'
+	</update>
+      
+	<!--插入生命周期表-->
+	<insert id="insertBatchs" parameterType="com.amistrong.express.beans.response.Toolwholelifecycle">
+		insert into toolwholelifecycle(
+			ToolWholeLifecycleID
+			,BusinessFlowLnkID
+			,HandSetID
+			,ProcessAmount
+			,ToolID
+			,KnifeInventoryCode
+			,DelFlag
+			,CreateUser
+			,CreateTime
+			,UpdateUser
+			,UpdateTime
+			,Version
+       	)
+        Values (
+            #{twf.toolWholeLifecycleID}
+			,#{twf.businessFlowLnkID}
+			,#{twf.handSetID}
+			,#{twf.processAmount}
+			,#{twf.toolID}
+			,#{twf.knifeInventoryCode}
+			,'0'
+			,#{twf.createUser}
+			,NOW()
+			,#{twf.updateUser}
+			,NOW()
+			,'0'
+        )
+	</insert>
+	
+	<!--插入出库履历表-->
+	<insert id="insertToollibraryhistory" parameterType="com.amistrong.express.beans.response.Toollibraryhistory">
+		insert into toollibraryhistory(
+			ToolLiberyID
+			,KnifeInventoryCode
+			,ToolID
+			,ReceiveUser
+			,ReceiveCount
+			,ReceiveTime
+			,LibraryCause
+			,UpdateTime
+			,UpdateUser
+			,CreateTime
+			,CreateUser
+			,Version
+			,DelFlag
+		)
+        Values (
+           	#{tlh.toolLiberyID}
+			,#{tlh.knifeInventoryCode}
+			,#{tlh.toolID}
+			,#{tlh.receiveUser}
+			,#{tlh.receiveCount}
+			,NOW()
+			,#{tlh.libraryCause}
+			,NOW()
+			,#{tlh.updateUser}
+			,NOW()
+			,#{tlh.createUser}
+			,'1'
+			,'0'
+        )
+	</insert>
+	
+	<!--插入sap履历信息-->
+	<insert id="insetSapHisInfo" parameterType="com.amistrong.express.beans.response.SapUploadhistory">
+		insert into sapuploadhistory(
+			sapID
+			,pstngDate
+			,docDate
+			,material
+			,moveType
+			,entryQnt
+			,moveMat
+			,costCenter
+			,outInDate
+			,uploadDate
+			,state
+			,outInUser
+			,CreateTime
+			,UpdateTime
+			,CreateUser
+			,UpdateUser
+			,Version
+			,DelFlag
+			<if test="sap.orderID != null and sap.orderID != ''">
+			,orderID
+			</if>
+			<if test="sap.valType != null and sap.valType != ''">
+			,valType
+			</if>
+			<if test="sap.poItem != null and sap.poItem != ''">
+			,poItem
+			</if>
+		)
+        Values (
+           	#{sap.sapID}
+           	,#{sap.pstngDate}
+           	,#{sap.docDate}
+           	,#{sap.material}
+           	,#{sap.moveType}
+           	,#{sap.entryQnt}
+            ,#{sap.moveMat}
+           	,#{sap.costCenter}
+           	,NOW()
+           	,NOW()
+           	,#{sap.state}
+           	,#{sap.outInUser}
+           	,NOW()
+           	,NOW()
+           	,#{sap.createUser}
+           	,#{sap.createUser}
+           	,'0'
+           	,'0'
+           	<if test="sap.orderID != null and sap.orderID != ''">
+			,#{sap.orderID}
+			</if>
+			<if test="sap.valType != null and sap.valType != ''">
+			,#{sap.valType}
+			</if>
+			<if test="sap.poItem != null and sap.poItem != ''">
+			,#{sap.poItem}
+			</if>
+        )
+	</insert>
+	
+	<!--查询sap自动上传开关是否开启-->
+	<select id="getSapOnOff" resultType="java.lang.String">
+       	  SELECT OnOffState from onoff where OnOffCode = 'C01S001_001Activity' and DelFlag = '0'
+	</select>
+	
+</mapper>

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<taglib xmlns="http://java.sun.com/xml/ns/j2ee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://java.sun.com/xml/ns/jsee/web-jsptagLibrary_2_0.xsd"
+    version="2.0">
+	<tlib-version>1.2</tlib-version>
+    <shortname>hc</shortname>
+    <uri>/hctaglib</uri>
+    <tag>
+        <name>hasPermission</name>
+        <tagclass>com.ymsc.frameWork.tag.HCPermissionTag</tagclass>
+        <bodycontent>JSP</bodycontent>
+        <attribute>
+            <name>permissionName</name>
+        </attribute>
+    </tag>
+    <tag>
+
+    <name>optionList</name>
+
+    <tag-class>com.ymsc.frameWork.tag.OptionListTag</tag-class>
+
+    <body-content>empty</body-content>
+
+    <attribute>
+
+        <name>type</name>
+
+         <required>true</required>
+
+         <rtexprvalue>true</rtexprvalue>
+
+    </attribute>
+
+ </tag>
+
+</taglib>

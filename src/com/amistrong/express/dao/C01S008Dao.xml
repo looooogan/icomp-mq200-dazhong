@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"   
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+
+<mapper namespace="com.amistrong.express.dao.C01S008Dao">
+    
+	<!-- 更新合成刀库表 -->
+	<update id="updateSynthesisknife" parameterType="com.amistrong.express.beans.response.Synthesisknife">
+		update 
+		 	synthesisknife
+		set 
+			LoadState = #{sk.loadState}
+			,UpdateTime = NOW()
+			,UpdateUser = #{sk.updateUser}
+			<if test="sk.businessFlowLnkID != null and sk.businessFlowLnkID != ''">
+			,BusinessFlowLnkID = #{sk.businessFlowLnkID}
+			</if>
+		where
+			rFID = #{sk.rFID} and DelFlag = '0'
+	</update>
+	
+	<!-- 根据材料号 更新流转统计表数据 -->
+	<update id="updateTooltransferTotal" parameterType="com.amistrong.express.beans.response.TooltransferTotal">
+		update 
+		 	tooltransferTotal
+		set 
+			UpdateTime = NOW()
+			,UpdateUser = #{tt.updateUser}
+			<if test="tt.spareKnifeSum != null and tt.spareKnifeSum != ''">
+             ,SpareKnifeSum = #{tt.spareKnifeSum}
+         	</if>
+         	<if test="tt.spareKnifeSum == 0">
+             ,SpareKnifeSum = #{tt.spareKnifeSum}
+         	</if>
+			<if test="tt.grindingFactorySnum != null and tt.grindingFactorySnum != ''">
+             ,GrindingFactorySnum = #{tt.grindingFactorySnum}
+         	</if>
+         	<if test="tt.grindingFactorySnum == 0">
+             ,GrindingFactorySnum = #{tt.grindingFactorySnum}
+         	</if>
+         	<if test="tt.externalGrindingSum != null and tt.externalGrindingSum != ''">
+             ,ExternalGrindingSum = #{tt.externalGrindingSum}
+         	</if>
+         	<if test="tt.externalGrindingSum == 0">
+             ,ExternalGrindingSum = #{tt.externalGrindingSum}
+         	</if>
+         	<if test="tt.productionLineSum != null and tt.productionLineSum != ''">
+             ,ProductionLineSum = #{tt.productionLineSum}
+         	</if>
+         	<if test="tt.productionLineSum == 0">
+             ,ProductionLineSum = #{tt.productionLineSum}
+         	</if>
+         	<if test="tt.stayExternalGrindingSum != null and tt.stayExternalGrindingSum != ''">
+             ,StayExternalGrindingSum = #{tt.stayExternalGrindingSum}
+         	</if>
+         	<if test="tt.stayExternalGrindingSum == 0">
+             ,StayExternalGrindingSum = #{tt.stayExternalGrindingSum}
+         	</if>
+    	    <if test="tt.scrapSum != null and tt.scrapSum != ''">
+             ,ScrapSum = #{tt.scrapSum}
+         	</if>
+		where
+			ToolCode = #{tt.toolCode} 
+	</update>
+	
+	<!-- 更新刀具流转表 刀具状态-->
+	<update id="updateTooltransfer" parameterType="com.amistrong.express.beans.response.Tooltransfer">
+		update 
+		 	tooltransfer
+		set 
+			UpdateTime = NOW()
+			,UpdateUser = #{tf.updateUser}
+			<if test="tf.businessFlowLnkID != null and tf.businessFlowLnkID != ''">
+				,BusinessFlowLnkID = #{tf.businessFlowLnkID}
+			</if> 
+			<if test="tf.toolState != null and tf.toolState != ''">
+				,ToolState = #{tf.toolState}
+			</if> 
+		where
+			RfidContainerID = #{tf.rfidContainerID}
+			<if test="tf.toolID != null and tf.toolID != ''">
+				and ToolID = #{tf.toolID}
+			</if> 
+	</update>
+	
+	<!-- 更新刀具流转表 刀具状态-->
+	<update id="updateTubedetailinfo" parameterType="com.amistrong.express.beans.response.Tubedetailinfo">
+		update 
+		 	tubedetailinfo
+		set 
+			UpdateTime = NOW()
+			,UpdateUser = #{tbf.updateUser}
+			,InstallUser = #{tbf.installUser}
+			,InstallTime = NOW()
+			,grindingsum = #{tbf.grindingsum}
+		where
+			ID = #{tbf.ID}
+	</update>
+	
+   	<!-- 新建筒刀拆分记录 -->
+    <insert id="insertTubedetailinfo" parameterType="com.amistrong.express.beans.response.Tubedetailinfo">
+        insert into tubedetailinfo(
+            ID
+	        ,SynthesisParametersCode
+			,rFID
+			,SynthesisCutterNumber
+			,ToolCode
+			,LoadState
+			,ToolCount
+			,grindingsum
+			,DelFlag
+			,CreateUser
+			,UpdateUser
+			,CreateTime
+			,UpdateTime
+			,Version
+			,SplitUser
+			,SplitTime
+        )
+        Values (
+        	#{t.ID},
+        	#{t.synthesisParametersCode},
+        	#{t.rFID},
+        	#{t.synthesisCutterNumber},
+        	#{t.toolCode},
+        	#{t.loadState},
+        	#{t.toolCount},
+        	 #{t.grindingsum},
+        	'0',
+        	#{t.createUser},
+        	#{t.updateUser},
+        	NOW(),
+        	NOW(),
+        	'0',
+        	#{t.splitUser},
+        	#{t.splitTime}
+        )
+    </insert>
+    
+    <!-- 查询最后一次修磨次数-->
+    <select id="getGrindingsum" resultType="java.lang.Integer">
+			SELECT
+				IFNULL(
+					(
+						SELECT
+							grindingsum
+						FROM
+							tubedetailinfo
+						WHERE
+							rFID = #{t.rFID}
+						AND ToolCode = #{t.toolCode}
+						ORDER BY
+							UpdateTime DESC
+						LIMIT 1
+					),
+					0
+				)
+    </select>
+    
+    <select id="getTubeId" resultType="java.lang.String">
+			SELECT
+				ID
+			FROM
+				tubedetailinfo
+			WHERE
+				SynthesisParametersCode = #{tbf.synthesisParametersCode} 
+			AND rFID = #{tbf.rFID} and ToolCode = #{tbf.toolCode} ORDER BY UpdateTime DESC LIMIT 1
+    </select>
+    
+</mapper>

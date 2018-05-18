@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"   
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+
+<mapper namespace="com.amistrong.express.dao.C01S009Dao">
+    	
+	
+    <!-- 根据材料号查询流转统计表数据-->
+    <select id="searchTooltransferList" resultType="com.amistrong.express.beans.response.Tooltransfer">
+			SELECT 
+				ToolState toolState
+			FROM
+				tooltransfer
+			WHERE
+				RfidContainerID = #{tt.rfidContainerID} and DelFlag = '0'
+			order by ToolState
+    </select>
+    
+	<!-- 插入筒刀表数据 -->
+    <insert id="insertTubedetailinfo" parameterType="com.amistrong.express.beans.response.Tubedetailinfo">
+        insert into tubedetailinfo(
+            ID
+	        ,SynthesisParametersCode
+			,rFID
+			,SynthesisCutterNumber
+			,ToolCode
+			,LoadState
+			,ToolCount
+			,grindingsum
+			,DelFlag
+			,CreateUser
+			,UpdateUser
+			,CreateTime
+			,UpdateTime
+			,Version
+        )
+        Values (
+        	#{t.ID},
+        	#{t.synthesisParametersCode},
+        	#{t.rFID},
+        	#{t.synthesisCutterNumber},
+        	#{t.toolCode},
+        	#{t.loadState},
+        	#{t.toolCount},
+        	#{t.grindingsum},
+        	'0',
+        	#{t.createUser},
+        	#{t.updateUser},
+        	NOW(),
+        	NOW(),
+        	'0'
+        )
+    </insert>
+    
+    <!--查询筒刀信息-->
+    <select id="getTubeInfo" resultType="com.amistrong.express.beans.response.Tubedetailinfo">
+			SELECT 
+				LoadState loadState
+			FROM
+				tubedetailinfo
+			WHERE
+				rFID = #{rFID} and ToolCode = #{toolCode} and DelFlag = '0'
+			order by SynthesisCutterNumber desc
+			limit 1
+    </select>
+    
+    <select id="searchByTubedetailinfo" resultType="com.amistrong.express.beans.response.Tubedetailinfo">
+   	   	select
+         	SynthesisCutterNumber synthesisCutterNumber
+        from 
+        	tubedetailinfo 
+        where 
+        	SynthesisParametersCode = #{tb.synthesisParametersCode}
+        order by ABS(SynthesisCutterNumber) desc
+        limit 1
+    </select>
+    
+    	<update id="deleteSynthesisknife" parameterType="com.amistrong.express.beans.response.Synthesisknife">
+		update 
+		 	synthesisknife
+		set 
+			DelFlag = '1'
+		where
+			rFID = #{deleteSynEntity.rFID} 
+	</update>
+</mapper>

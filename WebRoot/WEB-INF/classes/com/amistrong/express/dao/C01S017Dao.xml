@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"   
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+
+<mapper namespace="com.amistrong.express.dao.C01S017Dao">
+    
+    <!-- 根据材料号查询非单品回厂修复信息-->
+    <select id="getFOutsidefactory" resultType="com.amistrong.express.beans.response.Outsidefactory">
+			SELECT 
+				toolID,
+				sum(numberGrinding-ReceiveNumber) numberGrinding,
+				toolType
+			FROM
+				outsidefactory
+			WHERE
+				DelFlag = '0'
+				AND materialNum = #{outsidefactory.materialNum}
+				AND repairState = #{outsidefactory.repairState}
+    </select>
+    
+     <!-- 查询刀具信息-->
+    <select id="searchTool" resultType="com.amistrong.express.beans.response.Tool">
+	   SELECT
+		ToolID toolID
+		,LibraryCodeID libraryCodeID
+		,ToolCode toolCode
+		,ToolName toolName
+		,ToolType toolType
+		,ToolPic toolPic
+		,ToolUnitnumber toolUnitnumber
+		,ToolSpecifications toolSpecifications
+		,ToolSupplier toolSupplier
+		,ToolCutNumber toolCutNumber
+		,ToolBrand toolBrand
+		,ToolGrinding toolGrinding
+		,ToolConsumetype toolConsumetype
+		,ToolSharpennum toolSharpennum
+		,ToolMax toolMax
+		,ToolMin toolMin
+		,ToolNumber toolNumber
+		,standard standard
+		,ToolSharpenCriterion toolSharpenCriterion
+		,ToolLength toolLength
+		,ToolSharpenLength toolSharpenLength
+		,ToolTurnover toolTurnover
+		,QuotaProcessingVolume quotaProcessingVolume
+		,Per10k per10k
+		,PurchasingCycle purchasingCycle
+		,DelFlag delFlag
+		,UpdateUser updateUser
+		,CreateUser createUser
+		,Version version
+		,UniquelyIdentify uniquelyIdentify
+		,BeiMin beiMin
+		,BeiMax beiMax
+		from tool
+	   	where ToolID = #{tool.toolID}
+    </select>	
+    
+      <!-- 根据RFID码查询单品回厂修复信息-->
+    <select id="getOutsidefactory" resultType="com.amistrong.express.beans.response.Outsidefactory">
+			SELECT 
+				orderNum,
+				materialNum,
+				toolID,
+				toolType
+			FROM
+				outsidefactory
+			WHERE
+				DelFlag = '0'
+				AND materialNum = #{outsidefactory.materialNum}
+				AND repairState = #{outsidefactory.repairState}
+    </select>
+    
+     <!-- 根據刀具编码(材料号)取得回厂信息-->
+    <select id="getOutsidefactoryList" resultType="com.amistrong.express.beans.response.Outsidefactory">
+			SELECT 
+				outsideFactoryID,
+				numberGrinding,
+				ReceiveNumber receiveNumber,
+				orderNum,
+				materialNum,
+				toolID,
+				toolType,
+				outDoorNom
+			FROM
+				outsidefactory
+			WHERE
+				DelFlag = '0'
+				AND outDoorNom = #{out.outDoorNom}
+				AND repairState = '1'
+			<if test="out.materialNum != null and out.materialNum != ''">
+             	AND materialNum = #{out.materialNum}
+         	</if>
+        	<if test="out.laserCode != null and out.laserCode != ''">
+             	AND laserCode = #{out.laserCode}
+         	</if>
+    </select>
+    
+	<update id="updateOutsidefactory" parameterType="com.amistrong.express.beans.response.Outsidefactory">
+		update 
+			outsidefactory
+		set 
+			ReceiveNumber = #{ra.receiveNumber},
+			UpdateTime = NOW(),
+			UpdateUser = #{ra.updateUser}
+			<if test="ra.delFlag != null and ra.delFlag != ''">
+			,DelFlag = #{ra.delFlag}
+			</if>
+			<if test="ra.repairState != null and ra.repairState != ''">
+			,RepairState = #{ra.repairState}
+			</if>
+		where
+			outsideFactoryID = #{ra.outsideFactoryID}
+	</update>
+	
+     <!-- 根据激光码查询回厂信息-->
+    <select id="getOutsidefactoryListByLaserCode" resultType="com.amistrong.express.beans.response.Outsidefactory">
+			SELECT 
+				outsideFactoryID,
+				outDoorNom,
+				numberGrinding,
+				merchantsID,
+				ReceiveNumber receiveNumber,
+				orderNum,
+				materialNum,
+				toolID,
+				toolType
+			FROM
+				outsidefactory
+			WHERE
+				DelFlag = '0'
+				AND laserCode = #{laserCode}
+				AND repairState = '1'
+			ORDER BY manufactureDate ASC
+    </select>
+    
+	<!-- 新建出库履历 -->
+	<insert id="insertOutsidefactoryHistory" parameterType="com.amistrong.express.beans.response.Outsidefactoryhistory">
+       insert into outsidefactoryhistory(
+			outsideFactoryID
+			,orderNum
+			,outDoorNum
+			,merchantsID
+			,toolID
+			,materialNum
+			,backFactoryNumber
+			,CreateUser
+			,CreateTime
+		)
+		Values (
+			 #{outHis.ID}
+			,#{outHis.orderNum}
+			,#{outHis.outDoorNum}
+			,#{outHis.merchantsID}
+			,#{outHis.toolID}
+			,#{outHis.materialNum}
+			,#{outHis.backFactoryNumber}
+			,#{outHis.createUser}
+			,NOW()
+		)
+    </insert>
+    
+    <!-- 查询所有未回厂单号list -->
+    <select id="getOutFactoryOutDoorNomList" resultType="com.amistrong.express.beans.response.Outsidefactory">
+			SELECT DISTINCT
+				outDoorNom
+			FROM
+				outsidefactory
+			WHERE
+				DelFlag = '0'
+			and repairState != '2' AND !ISNULL(materialNum) and materialNum != ''
+			ORDER BY manufactureDate ASC
+    </select>
+    
+	    <!-- 根据单号查厂外修复信息 -->
+    <select id="getOutFactoryDescByOutDoorNom" resultType="com.amistrong.express.beans.response.Outsidefactory">
+			SELECT 
+				(o.numberGrinding-o.ReceiveNumber) surplusNumber,
+				o.materialNum,
+				o.laserCode,
+				CASE WHEN ISNULL(o.laserCode) THEN '0' ELSE '1' END toolType,
+				r.RfidContainerID rfidContainerID,
+				o.toolID
+			FROM
+				outsidefactory o
+			left join rfidcontainer r on o.laserCode = r.LaserIdentificationCode and r.DelFlag = '0'
+			WHERE
+				o.DelFlag = '0'
+			and o.repairState != '2'
+			and o.outDoorNom = #{outDoorNom} and !ISNULL(o.materialNum) and o.materialNum != ''
+    </select>
+    
+</mapper>

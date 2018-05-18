@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"   
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+
+<mapper namespace="com.amistrong.express.dao.C01S010Dao">
+    
+    <!-- 根据合成刀编号查询刀具详细信息-->
+    <select id="getSynthesisToolList" resultType="com.amistrong.express.beans.response.Synthesiscutterlocation">
+			SELECT
+				sl.ToolCode toolCode,
+				COUNT(1) toolCount,
+				sl.SynthesisCutterNumber synthesisCutterNumber,
+				t.ToolConsumetype toolConsumetype,
+				t.toolType toolType
+			FROM
+				synthesisparameters sp
+			INNER JOIN synthesiscutterlocation sl ON sp.SynthesisParametersID = sl.SynthesisParametersID
+			LEFT JOIN tool t on  t.ToolCode = sl.ToolCode
+			WHERE
+				sl.SynthesisParametersID IN (
+					SELECT
+						SynthesisParametersID synthesisParametersID
+					FROM
+						synthesisparameters
+					WHERE
+						SynthesisParametersCode = #{spCode}
+					AND DelFlag = '0'
+				)
+			AND sp.DelFlag = '0'
+			AND sl.DelFlag = '0'
+			GROUP BY
+				sl.ToolCode
+    </select>
+    
+    <!--新增刀具流转履历 -->
+    <insert id="insertTooltransferhistory" parameterType="com.amistrong.express.beans.response.Tooltransferhistory">
+        insert into tooltransferhistory(
+	        ToolTransferHistoryID
+			,RfidContainerID
+			,KnifeInventoryCode
+			,ToolID
+			,ToolProcuredID
+			,BusinessFlowLnkID
+			,ToolDurable
+			,ToolSharpennum
+			,ToolSharpenCriterion
+			,ToolLength
+			,ToolSharpenLength
+			,UsageCounter
+			,ToolGrindingLength
+			,InstallationState
+			,ToolState
+			,outUser
+			,inUser
+			,StockState
+			,CreateUser
+			,UpdateUser
+			,CreateTime
+			,UpdateTime
+			,DelFlag
+			,Version
+        )
+        Values (
+        	#{tth.toolTransferHistoryID},
+        	#{tth.rfidContainerID},
+        	#{tth.knifeInventoryCode},
+        	#{tth.toolID},
+        	#{tth.toolProcuredID},
+        	#{tth.businessFlowLnkID},
+        	#{tth.toolDurable},
+        	#{tth.toolSharpennum},
+        	#{tth.toolSharpenCriterion},
+        	#{tth.toolLength},
+        	#{tth.toolSharpenLength},
+        	#{tth.usageCounter},
+        	#{tth.toolGrindingLength},
+        	#{tth.installationState},
+        	#{tth.toolState},
+        	#{tth.outUser},
+        	#{tth.inUser},
+        	#{tth.stockState},
+        	#{tth.createUser},
+        	#{tth.updateUser},
+        	NOW(),
+        	NOW(),
+        	'0',
+        	'0'
+        )
+    </insert>
+    
+	<!-- 根据合成刀具编码查询刀具最后一次加工信息-->
+    <select id="getSynthesistoolsmachiningInfoBySpCode" resultType="com.amistrong.express.beans.response.Synthesistoolsmachining">
+			SELECT
+				AssemblyLineID assemblyLineID
+				,EquipmentID equipmentID
+				,AxleID axleID
+				,ProcessID processID
+				,PartsID partsID
+			FROM
+				synthesistoolsmachining
+			WHERE
+				SynthesisParametersCode = #{spCode}
+			ORDER BY CreateTime DESC
+			LIMIT 1
+    </select>
+    
+	<!--新增刀具流转履历 -->
+    <insert id="insetToolChangehistory" parameterType="com.amistrong.express.beans.request.ToolChangehistory">
+        insert into toolchangehistory(
+	        changeID
+			,SynthesisParametersCode
+			,AssemblyLineID
+			,ProcessID
+			,EquipmentID
+			,PartsID
+			,AxleID
+			,changeDate
+			,changeUser
+			,toolCode
+			,changeNum
+			,UpdateTime
+			,CreateTime
+			,UpdateUser
+			,CreateUser
+			,Version
+			,DelFlag
+        )
+        Values (
+        	#{tch.changeID},
+        	#{tch.synthesisParametersCode},
+        	#{tch.assemblyLineID},
+        	#{tch.processID},
+        	#{tch.equipmentID},
+        	#{tch.partsID},
+        	#{tch.axleID},
+        	NOW(),
+        	#{tch.changeUser},
+        	#{tch.toolCode},
+        	#{tch.changeNum},
+        	NOW(),
+        	NOW(),
+        	#{tch.changeUser},
+        	#{tch.changeUser},
+        	'0',
+        	'0'
+        )
+    </insert>
+    
+</mapper>

@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"   
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+
+<mapper namespace="com.amistrong.express.dao.C01S001Dao">
+    
+    <!-- 验证RFID标签是否存在-->
+	<select id="getRfidContainerByRfidCode" parameterType="java.lang.String" resultType="com.amistrong.express.beans.response.Rfidcontainer">
+        SELECT
+	        RfidContainerID rfidContainerID
+	        ,ToolShelfID toolShelfID
+	        ,RfidCode rfidCode
+	        ,RfidReCount rfidReCount
+	        ,LaserIdentificationCode laserIdentificationCode
+	        ,BandType bandType
+	        ,QueryType queryType
+	        ,DelFlag delFlag
+	        ,UpdateUser updateUser
+	        ,UpdateTime updateTime
+	        ,SystemLogUser systemLogUser
+	        ,Version version
+        from 
+        	rfidcontainer
+        where 
+        	DelFlag = '0' and RfidCode = #{rfidCode}
+        order by 
+        	RfidContainerID
+    </select>  
+    
+	<!-- 判断新刀入库表是否有数据-->
+	<select id="getKnifeinventoryInfo" resultType="com.amistrong.express.beans.response.Knifeinventory">
+         SELECT
+        RfidContainerID rfidContainerID
+        ,KnifeInventoryCode knifeInventoryCode
+        ,ProcuredBatch procuredBatch
+        ,ToolID toolID
+        ,KnifeInventoryType knifeInventoryType
+        ,ToolDurable2 toolDurable2
+        ,KnifelnventoryNumber knifelnventoryNumber
+        ,ToolDurable toolDurable
+        ,ToolSharpennum toolSharpennum
+        ,ToolSharpenCriterion toolSharpenCriterion
+        ,ToolLength toolLength
+        ,ToolSharpenLength toolSharpenLength
+        ,DelFlag delFlag
+        from knifeinventory
+        where ToolID = #{ki.toolID} and DelFlag = '0'
+        <if test="ki.rfidContainerID != null and ki.rfidContainerID != ''">
+			and RfidContainerID = #{ki.rfidContainerID}
+		</if>
+    </select>
+    
+	
+	<!-- 判断刀具流转表是否有数据-->
+	<select id="getTooltransferInfo" resultType="com.amistrong.express.beans.response.Tooltransfer">
+        SELECT
+        RfidContainerID rfidContainerID
+        ,KnifeInventoryCode knifeInventoryCode
+        ,ToolID toolID
+        ,ProcuredBatch procuredBatch
+        ,BusinessFlowLnkID businessFlowLnkID
+        ,ProcessAmount processAmount
+        ,ToolDurable toolDurable
+        ,ToolSharpennum toolSharpennum
+        ,ToolSharpenCriterion toolSharpenCriterion
+        ,ToolLength toolLength
+        ,ToolSharpenLength toolSharpenLength
+        ,UsageCounter usageCounter
+        ,ToolGrindingLength toolGrindingLength
+        ,InstallationState installationState
+        ,ToolState toolState
+        ,ReplacementFlag replacementFlag
+        ,ConfirmedUser confirmedUser
+        ,ToolThisState toolThisState
+        ,StockState stockState
+        ,discardeFlag discardeFlag
+        ,DelFlag delFlag
+        ,UpdateTime updateTime
+        ,UpdateUser updateUser
+        ,CreateTime createTime
+        ,CreateUser createUser
+        ,Version version
+        from tooltransfer
+                RfidContainerID = #{tt.rfidContainerID}
+                DelFlag = #{tt.delFlag}
+        order by
+			RfidContainerID
+            ,KnifeInventoryCode
+    </select>
+    
+	
+	<!-- 根据刀具id取得刀具类型-->
+	<select id="getToolInfo" resultType="com.amistrong.express.beans.response.Tool">
+       SELECT
+		ToolID toolID
+		,LibraryCodeID libraryCodeID
+		,ToolCode toolCode
+		,ToolName toolName
+		,ToolType toolType
+		,ToolPic toolPic
+		,ToolUnitnumber toolUnitnumber
+		,ToolSpecifications toolSpecifications
+		,ToolSupplier toolSupplier
+		,ToolCutNumber toolCutNumber
+		,ToolBrand toolBrand
+		,ToolGrinding toolGrinding
+		,ToolConsumetype toolConsumetype
+		,ToolSharpennum toolSharpennum
+		,ToolMax toolMax
+		,ToolMin toolMin
+		,ToolNumber toolNumber
+		,standard standard
+		,ToolSharpenCriterion toolSharpenCriterion
+		,ToolLength toolLength
+		,ToolSharpenLength toolSharpenLength
+		,ToolTurnover toolTurnover
+		,QuotaProcessingVolume quotaProcessingVolume
+		,Per10k per10k
+		,PurchasingCycle purchasingCycle
+		,DelFlag delFlag
+		,UpdateTime updateTime
+		,UpdateUser updateUser
+		,CreateTime createTime
+		,CreateUser createUser
+		,Version version
+		,UniquelyIdentify uniquelyIdentify
+		,BeiMin beiMin
+		,BeiMax beiMax
+		from tool
+		where
+			ToolID = (SELECT ToolID from knifeinventory where RfidContainerID = #{tool.rfidContainerID} and DelFlag = '0' limit 1)
+			and DelFlag = '0'
+		order by
+			ToolID
+			,ToolCode
+    </select>
+	
+	<!-- 获取可用批次-->
+	<select id="getProcuredBatchList" resultType="com.amistrong.express.beans.response.Toolprocured">
+      SELECT
+        ToolProcuredID toolProcuredID
+        ,ToolsOrdeNO toolsOrdeNO
+        ,ToolCode toolCode
+        ,ProcuredBatch procuredBatch
+        ,ProcuredTime procuredTime
+        ,UnitPrice unitPrice
+        ,ProcuredUser procuredUser
+        ,ProcuredCount procuredCount
+        ,ProcuredInto procuredInto
+        ,ProcuredPaying procuredPaying
+        ,UpdateTime updateTime
+        ,ProcuredType procuredType
+        ,DelFlag delFlag
+        ,CreateUser createUser
+        ,CreateTime createTime
+        ,UpdateUser updateUser
+        ,Version version
+<!--         ,ProcuredNumbe procuredNumber -->
+        from toolprocured
+      where 
+      	DelFlag = '0' and ToolCode = #{toolprocured.toolCode}
+      	<if test="toolprocured.toolsOrdeNO != null and toolprocured.toolsOrdeNO != ''">
+			and ToolsOrdeNO = #{toolprocured.toolsOrdeNO}
+		</if>
+      order by
+      	ProcuredTime DESC
+    </select>
+    
+	<!-- 根据刀具id取得刀具类型-->
+	<select id="searchBitInputInf" resultType="com.amistrong.express.beans.response.Tool">
+    	SELECT
+		ToolID as toolID
+		,LibraryCodeID as libraryCodeID
+		,ToolCode as toolCode
+		,ToolConsumetype as toolConsumetype
+		,ToolType toolType
+		,ToolSharpennum as toolSharpennum
+		,ToolSharpenCriterion as toolSharpenCriterion
+		,ToolLength as toolLength
+		,ToolSharpenLength as toolSharpenLength
+		,ToolGrinding toolGrinding
+		,ToolParametersType toolParametersType
+		,(SELECT
+			k.RfidContainerID
+		FROM
+			knifeinventory k
+		INNER JOIN rfidcontainer r on k.RfidContainerID = r.RfidContainerID AND r.DelFlag = '0' AND r.QueryType = '0'
+		WHERE
+			k.ToolID = (
+				SELECT
+					ToolID
+				FROM
+					tool
+				WHERE
+					ToolCode = #{tool.toolCode}
+				AND DelFlag = '0'
+			)
+		AND k.DelFlag = '0') rfidContainerID,
+		(SELECT
+			KnifeInventoryCode
+		FROM
+			knifeinventory
+		WHERE
+			ToolID = (
+				SELECT
+					ToolID
+				FROM
+					tool
+				WHERE
+					ToolCode = #{tool.toolCode}
+				AND DelFlag = '0'
+			)
+		AND DelFlag = '0') knifeInventoryCode
+		from tool
+		where ToolCode = #{tool.toolCode} and DelFlag = '0'
+    </select>
+    
+	<!-- 更新新刀库存表 -->
+	<update id="updateKnifeinventory" parameterType="com.amistrong.express.beans.response.Knifeinventory">
+        update 
+        	knifeinventory
+        set
+            KnifelnventoryNumber = #{knifeinventory.knifelnventoryNumber},
+            UpdateTime = NOW(),
+            UpdateUser = #{knifeinventory.updateUser}
+        where RfidContainerID = #{knifeinventory.rfidContainerID}
+    </update>
+				
+	<!-- 更新采购表 -->
+	<update id="updateToolprocured" parameterType="com.amistrong.express.beans.response.Toolprocured">
+       update 
+       		toolprocured 
+       set 
+       		ProcuredCount = #{toolprocured.procuredCount},
+       		ProcuredInto = #{toolprocured.procuredInto},
+       		UpdateTime = NOW(),
+            UpdateUser = #{toolprocured.updateUser}
+       		<if test="toolprocured.delFlag != null and toolprocured.delFlag != ''">
+			,DelFlag = #{toolprocured.delFlag}
+			</if>
+		where
+			 ToolCode = #{toolprocured.toolCode} and ToolsOrdeNO = #{toolprocured.toolsOrdeNO}
+    </update>
+    
+	  
+			
+	<!-- 新建入库履历 -->
+	<insert id="insertStoragerecord" parameterType="com.amistrong.express.beans.response.Storagerecord">
+       insert into storagerecord(
+			StorageID
+			,ToolID
+			,ToolCode
+			,ToolsOrdeNO
+			,StorageState
+			,KnifeInventoryCode
+			,StorageNum
+			,StorageType
+			,DelFlag
+			,UpdateTime
+			,UpdateUser
+			,CreateTime
+			,CreateUser
+		)
+		Values (
+			#{storagerecord.storageID}
+			,#{storagerecord.toolID}
+			,#{storagerecord.toolCode}
+			,#{storagerecord.toolsOrdeNO}
+			,#{storagerecord.storageState}
+			,#{storagerecord.knifeInventoryCode}
+			,#{storagerecord.storageNum}
+			,#{storagerecord.storageType}
+			,#{storagerecord.delFlag}
+			,NOW()
+			,#{storagerecord.updateUser}
+			,NOW()
+			,#{storagerecord.createUser}
+		)
+    </insert>
+    
+	<delete id="deleteKnifeinventory" parameterType="com.amistrong.express.beans.response.Knifeinventory">
+         delete from knifeinventory where ToolID = #{k1.toolID}
+    </delete>
+    
+	<delete id="deleteRfidcontainer" parameterType="com.amistrong.express.beans.response.Rfidcontainer">
+         delete from rfidcontainer where RfidContainerID = #{rf.rfidContainerID}
+    </delete>
+    
+</mapper>

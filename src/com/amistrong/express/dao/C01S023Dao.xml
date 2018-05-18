@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"   
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+
+<mapper namespace="com.amistrong.express.dao.C01S023Dao">
+    
+    <!-- 更新载体激光识别码 -->
+	<update id="updateRfidcontainerLaserCode" >
+		update 
+			rfidcontainer
+		set 
+			LaserIdentificationCode = #{laserCode},
+			UpdateTime = NOW(),
+			UpdateUser = #{customerID}
+		where
+			RfidContainerID = #{rfid}
+	</update>
+	
+	 <!-- 验证激光码是否重复-->
+    <select id="getLaserCodeCountByLaserCode" resultType="java.lang.Integer">
+     select
+    	count(1)
+     from 
+     	rfidcontainer
+     where
+        LaserIdentificationCode = #{laserCode} and DelFlag = '0' 
+    </select>
+				
+	 <!-- 以材料号、厂家 查询激光码总数-->
+    <select id="getLaserCodeCountByMaterialNumAndManufactor" resultType="java.lang.Integer">
+     select
+    	count(1)
+     from 
+     	rfidcontainer
+     where
+        LaserIdentificationCode like concat(#{materialNumAndManufactorStr},'%')
+    </select>
+    
+	 <!-- 验证材料号为一体刀材料号-->
+    <select id="getSynthesisparametersByToolCode" resultType="com.amistrong.express.beans.response.Synthesisparameters">
+     select
+    	createType createType
+     from 
+     	synthesisparameters
+     where
+        SynthesisParametersCode = #{toolCode} and DelFlag = '0'
+    </select>
+    
+		 <!-- 查询生产关联关系平均加工量list-->
+    <select id="getToolDurableList" resultType="com.amistrong.express.beans.response.ToolDurable">
+		SELECT DISTINCT
+			ToolDurable toolDurable
+		FROM
+			oplink
+		WHERE
+			SynthesisParametersID = (
+				SELECT
+					SynthesisParametersID
+				FROM
+					synthesisparameters
+				WHERE
+					SynthesisParametersCode = #{toolCode}
+				AND DelFlag = '0' AND CreateType = '4'
+				LIMIT 1
+			)
+    </select>
+    
+    <insert id="insertSynthesistoolsmachining" parameterType="com.amistrong.express.beans.response.Synthesistoolsmachining">
+        insert into synthesistoolsmachining(
+	        SynthesisNumber
+			,SynthesisParametersNumber
+			,SynthesisParametersCode
+			,AssemblyLineID
+			,EquipmentID
+			,AxleID
+			,ProcessID
+			,PartsID
+			,OuterTime
+			,OuterUser
+			,RemoveReason
+			,ProcessAmount
+			,DelFlag
+			,UpdateTime
+			,CreateTime
+			,UpdateUser
+			,CreateUser
+			,Version
+			<if test="syn.rfidContainerID != null and syn.rfidContainerID != ''">
+             ,RfidContainerID
+         	</if>
+        )
+        Values (
+        	#{syn.synthesisNumber},
+        	#{syn.synthesisParametersNumber},
+        	#{syn.synthesisParametersCode},
+        	#{syn.assemblyLineID},
+        	#{syn.equipmentID},
+        	#{syn.axleID},
+        	#{syn.processID},
+        	#{syn.partsID},
+        	#{syn.outerTime},
+        	#{syn.outerUser},
+        	'1',
+        	#{syn.processAmount},
+        	'0',
+        	NOW(),
+        	NOW(),
+        	#{syn.updateUser},
+        	#{syn.updateUser},
+        	'0'
+			<if test="syn.rfidContainerID != null and syn.rfidContainerID != ''">
+             ,#{syn.rfidContainerID}
+         	</if>
+        )
+    </insert>
+    
+    <!-- 插入刀具加工信息-->
+    <insert id="insertToolsmachining" parameterType="com.amistrong.express.beans.response.Toolsmachining">
+        insert into toolsmachining(
+	        SynthesisNumber
+			,KnifeInventoryCode
+			,ToolID
+			,AssemblyLineID
+			,EquipmentID
+			,ProcessID
+			,PartsID
+			,AxleID
+			,OuterTime
+			,OuterUser
+			,RemoveReason
+			,ProcessAmount
+			,DelFlag
+			,RemoveUser
+			,UpdateTime
+			,CreateTime
+			,UpdateUser
+			,CreateUser
+			,Version
+			<if test="ts.rfidContainerID != null and ts.rfidContainerID != ''">
+             ,RfidContainerID
+         	</if>
+        )
+        Values (
+        	#{ts.synthesisNumber},
+        	#{ts.knifeInventoryCode},
+        	#{ts.toolID},
+        	#{ts.assemblyLineID},
+        	#{ts.equipmentID},
+        	#{ts.processID},
+        	#{ts.partsID},
+        	#{ts.axleID},
+        	#{ts.outerTime},
+        	#{ts.outerUser},
+        	#{ts.removeReason},
+        	#{ts.processAmount},
+        	'0',
+        	#{ts.outerUser},
+        	NOW(),
+        	NOW(),
+        	#{ts.outerUser},
+        	#{ts.outerUser},
+        	'0'
+			<if test="ts.rfidContainerID != null and ts.rfidContainerID != ''">
+             ,#{ts.rfidContainerID}
+         	</if>
+        )
+    </insert>
+    
+	
+</mapper>

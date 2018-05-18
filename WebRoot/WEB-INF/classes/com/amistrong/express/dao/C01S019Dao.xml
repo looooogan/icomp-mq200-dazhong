@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"   
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+
+<mapper namespace="com.amistrong.express.dao.C01S019Dao">
+	
+    <!-- 新增 厂外修复表数据-->
+    <insert id="insertOutsidefactory" parameterType="com.amistrong.express.beans.response.Outsidefactory">
+        insert into outsidefactory(
+	        outsideFactoryID
+			,orderNum
+			,merchantsID
+			,toolID
+			,materialNum
+			,numberGrinding
+			,grindingType
+			,toolType
+			,manufactureDate
+			,repairState
+			,DelFlag
+			,CreateUser
+			,updateUser
+			,CreateTime
+			,updateTime
+			,expandSpace4
+			,laserCode
+        )
+        Values (
+        	#{uf.outsideFactoryID},
+        	#{uf.orderNum},
+        	#{uf.merchantsID},
+        	#{uf.toolID},
+        	#{uf.materialNum},
+        	#{uf.numberGrinding},
+        	#{uf.grindingType},
+        	#{uf.toolType},
+        	NOW(),
+        	#{uf.repairState},
+        	'0',
+        	#{uf.createUser},
+        	#{uf.updateUser},
+        	NOW(),
+        	NOW(),
+        	#{uf.expandSpace4},
+        	(select LaserIdentificationCode from rfidcontainer where RfidContainerID = #{uf.expandSpace4})
+        )
+    </insert>
+    
+	 <!-- 查询厂外修复商家list-->
+    <select id="getMerchantsList" resultType="com.amistrong.express.beans.response.Merchants">
+     select
+    	merchantsID,merchantsName
+     from 
+     	merchants
+     where
+        DelFlag = '0'
+    </select>
+    
+    <!-- 插入授权表-->
+    <insert id="insertAuthorizationDao" parameterType="com.amistrong.express.beans.response.Authorization">
+        insert into authorization(
+	        authorizationID
+			,authorizationUserID
+			,authorizedReason
+			,authorizedTime
+			,toolID
+			,toolCode
+			,BusinessCode
+			,CreateUserID
+			,UpdateUser
+			,UpdateTime
+			,CreateTime
+			,note
+        )
+        Values (
+        	#{authorization.authorizationID},
+        	#{authorization.authorizationUserID},
+        	#{authorization.authorizedReason},
+        	NOW(),
+        	#{authorization.toolID},
+        	#{authorization.toolCode},
+        	#{authorization.businessCode},
+        	#{authorization.createUserID},
+        	#{authorization.createUserID},
+        	NOW(),
+        	NOW(),
+        	#{authorization.note}
+        )
+    </insert>
+    
+</mapper>

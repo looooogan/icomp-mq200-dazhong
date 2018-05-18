@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"   
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+
+<mapper namespace="com.amistrong.express.dao.C01S010Dao">
+    
+    <!-- 根据合成刀编号查询刀具详细信息-->
+    <select id="getSynthesisToolList" resultType="com.amistrong.express.beans.response.Synthesiscutterlocation">
+			SELECT
+				sl.ToolCode toolCode,
+				<!--R&D-->
+				sl.SynthesisParametersID synthesisParametersID,
+				COUNT(1) toolCount,
+				sl.SynthesisCutterNumber synthesisCutterNumber,
+				t.ToolConsumetype toolConsumetype,
+				t.toolType toolType
+			FROM
+				synthesisparameters sp
+			INNER JOIN synthesiscutterlocation sl ON sp.SynthesisParametersID = sl.SynthesisParametersID
+			LEFT JOIN tool t on  t.ToolCode = sl.ToolCode
+			WHERE
+				sl.SynthesisParametersID IN (
+					SELECT
+						SynthesisParametersID synthesisParametersID
+					FROM
+						synthesisparameters
+					WHERE
+						SynthesisParametersCode = #{spCode}
+					AND DelFlag = '0'
+				)
+			AND sp.DelFlag = '0'
+			AND sl.DelFlag = '0'
+			GROUP BY
+				sl.ToolCode
+    </select>
+
+
+	<!--插入到流转表-->
+	<insert id="insertTooltransfer"  parameterType="com.amistrong.express.beans.response.Tooltransfer">
+		insert into tooltransfer(
+		RfidContainerID
+		,KnifeInventoryCode
+		,ToolID
+		,BusinessFlowLnkID
+		,ToolDurable
+		,ToolState
+		,StockState
+		,DelFlag
+		,UpdateTime
+		,UpdateUser
+		,CreateTime
+		,CreateUser
+		,Version
+		<if test="tt.toolSharpennum != null and tt.toolSharpennum != ''">
+			,ToolSharpennum
+		</if>
+		<if test="tt.toolSharpenCriterion != null and tt.toolSharpenCriterion != ''">
+			,ToolSharpenCriterion
+		</if>
+		<if test="tt.procuredBatch != null and tt.procuredBatch != ''">
+			,ProcuredBatch
+		</if>
+		<if test="tt.toolLength != null and tt.toolLength != ''">
+			,ToolLength
+		</if>
+		<if test="tt.toolSharpenLength != null and tt.toolSharpenLength != ''">
+			,ToolSharpenLength
+		</if>
+		<if test="tt.toolGrindingLength != null and tt.toolGrindingLength != ''">
+			,ToolGrindingLength
+		</if>
+		<if test="tt.usageCounter != null and tt.usageCounter != ''">
+			,UsageCounter
+		</if>
+		<if test="tt.usageCounter == 0">
+			,UsageCounter
+		</if>
+		<if test="tt.installationState != null and tt.installationState != ''">
+			,InstallationState
+		</if>
+		<if test="tt.toolThisState != null and tt.toolThisState != ''">
+			,ToolThisState
+		</if>
+		<if test="tt.processAmount != null and tt.processAmount != ''">
+			,ProcessAmount
+		</if>
+
+		)
+		Values (
+		#{tt.rfidContainerID}
+		,#{tt.knifeInventoryCode}
+		,#{tt.toolID}
+		,#{tt.businessFlowLnkID}
+		,#{tt.toolDurable}
+		,#{tt.toolState}
+		,#{tt.stockState}
+		,'0'
+		,NOW()
+		,#{tt.updateUser}
+		,NOW()
+		,#{tt.createUser}
+		,'0'
+		<if test="tt.toolSharpennum != null and tt.toolSharpennum != ''">
+			,#{tt.toolSharpennum}
+		</if>
+		<if test="tt.toolSharpenCriterion != null and tt.toolSharpenCriterion != ''">
+			,#{tt.toolSharpenCriterion}
+		</if>
+		<if test="tt.procuredBatch != null and tt.procuredBatch != ''">
+			,#{tt.procuredBatch}
+		</if>
+		<if test="tt.toolLength != null and tt.toolLength != ''">
+			,#{tt.toolLength}
+		</if>
+		<if test="tt.toolSharpenLength != null and tt.toolSharpenLength != ''">
+			,#{tt.toolSharpenLength}
+		</if>
+		<if test="tt.toolGrindingLength != null and tt.toolGrindingLength != ''">
+			,#{tt.toolGrindingLength}
+		</if>
+		<if test="tt.usageCounter != null and tt.usageCounter != ''">
+			,#{tt.usageCounter}
+		</if>
+		<if test="tt.usageCounter == 0">
+			,#{tt.usageCounter}
+		</if>
+		<if test="tt.installationState != null and tt.installationState != ''">
+			,#{tt.installationState}
+		</if>
+		<if test="tt.toolThisState != null and tt.toolThisState != ''">
+			,#{tt.toolThisState}
+		</if>
+		<if test="tt.processAmount != null and tt.processAmount != ''">
+			,#{tt.processAmount}
+		</if>
+		)
+	</insert>
+    
+    <!--新增刀具流转履历 -->
+    <insert id="insertTooltransferhistory" parameterType="com.amistrong.express.beans.response.Tooltransferhistory">
+        insert into tooltransferhistory(
+	        ToolTransferHistoryID
+			,RfidContainerID
+			,KnifeInventoryCode
+			,ToolID
+			,ToolProcuredID
+			,BusinessFlowLnkID
+			,ToolDurable
+			,ToolSharpennum
+			,ToolSharpenCriterion
+			,ToolLength
+			,ToolSharpenLength
+			,UsageCounter
+			,ToolGrindingLength
+			,InstallationState
+			,ToolState
+			,outUser
+			,inUser
+			,StockState
+			,CreateUser
+			,UpdateUser
+			,CreateTime
+			,UpdateTime
+			,DelFlag
+			,Version
+        )
+        Values (
+        	#{tth.toolTransferHistoryID},
+        	#{tth.rfidContainerID},
+        	#{tth.knifeInventoryCode},
+        	#{tth.toolID},
+        	#{tth.toolProcuredID},
+        	#{tth.businessFlowLnkID},
+        	#{tth.toolDurable},
+        	#{tth.toolSharpennum},
+        	#{tth.toolSharpenCriterion},
+        	#{tth.toolLength},
+        	#{tth.toolSharpenLength},
+        	#{tth.usageCounter},
+        	#{tth.toolGrindingLength},
+        	#{tth.installationState},
+        	#{tth.toolState},
+        	#{tth.outUser},
+        	#{tth.inUser},
+        	#{tth.stockState},
+        	#{tth.createUser},
+        	#{tth.updateUser},
+        	NOW(),
+        	NOW(),
+        	'0',
+        	'0'
+        )
+    </insert>
+    
+	<!-- 根据合成刀具编码查询刀具最后一次加工信息-->
+    <select id="getSynthesistoolsmachiningInfoBySpCode" resultType="com.amistrong.express.beans.response.Synthesistoolsmachining">
+			SELECT
+				AssemblyLineID assemblyLineID
+				,EquipmentID equipmentID
+				,AxleID axleID
+				,ProcessID processID
+				,PartsID partsID
+			FROM
+				synthesistoolsmachining
+			WHERE
+				SynthesisParametersCode = #{spCode}
+			ORDER BY CreateTime DESC
+			LIMIT 1
+    </select>
+    
+	<!--新增刀具流转履历 -->
+    <insert id="insetToolChangehistory" parameterType="com.amistrong.express.beans.request.ToolChangehistory">
+        insert into toolchangehistory(
+	        changeID
+			,SynthesisParametersCode
+			,AssemblyLineID
+			,ProcessID
+			,EquipmentID
+			,PartsID
+			,AxleID
+			,changeDate
+			,changeUser
+			,toolCode
+			,changeNum
+			,UpdateTime
+			,CreateTime
+			,UpdateUser
+			,CreateUser
+			,Version
+			,DelFlag
+        )
+        Values (
+        	#{tch.changeID},
+        	#{tch.synthesisParametersCode},
+        	#{tch.assemblyLineID},
+        	#{tch.processID},
+        	#{tch.equipmentID},
+        	#{tch.partsID},
+        	#{tch.axleID},
+        	NOW(),
+        	#{tch.changeUser},
+        	#{tch.toolCode},
+        	#{tch.changeNum},
+        	NOW(),
+        	NOW(),
+        	#{tch.changeUser},
+        	#{tch.changeUser},
+        	'0',
+        	'0'
+        )
+    </insert>
+
+	<!--查询替换刀具信息 R&D-->
+	<select id="queryReplaceTool" resultType="java.lang.String">
+		SELECT
+			GROUP_CONCAT(repalceToolCode)
+		FROM tool_replace
+		WHERE synthesisParametersID = #{synthesisParametersID}
+		AND toolCode = #{toolCode}
+		GROUP BY synthesisParametersID,toolCode
+	</select>
+
+
+
+
+
+	<!-- 插入处理 -->
+	<insert id="insertSynthesisExchange" parameterType="com.amistrong.express.beans.response.SynthesisExchange">
+		insert into synthesisexchange(
+		id
+		,rfid
+		,toolID
+		,toolCode
+		,SynthesisParametersID
+		)
+		Values (
+		#{synthesisExchange.id},
+		#{synthesisExchange.rfid},
+		#{synthesisExchange.toolID},
+		#{synthesisExchange.toolCode},
+		#{synthesisExchange.SynthesisParametersID}
+		)
+	</insert>
+
+	<!-- 插入处理 -->
+	<delete id="deleteSynthesisExchange" parameterType="java.lang.String">
+
+		DELETE  FROM synthesisexchange
+		WHERE rfid = #{rfid}
+
+	</delete>
+    
+</mapper>
